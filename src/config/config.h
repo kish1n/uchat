@@ -6,16 +6,21 @@ typedef struct {
 } DatabaseConfig;
 
 typedef struct {
-    char port[16];       // Порт сервера
-    char base_path[64];  // Базовый путь API
+    char port[16];
+    char base_path[64];
 } ServerConfig;
+
+typedef struct {
+    char level[16];
+    char format[16];
+} LoggingConfig;
 
 typedef struct {
     DatabaseConfig database;
     ServerConfig server;
+    LoggingConfig logging;
 } Config;
 
-// Функция для загрузки конфигурации
 int load_config(const char *filename, Config *config);
 
 #endif // CONFIG_H

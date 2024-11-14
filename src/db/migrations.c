@@ -2,11 +2,10 @@
 #include <stdlib.h>
 #include "migrations.h"
 
-// Функция для выполнения миграции из файла SQL
 int execute_migration(PGconn *conn, const char *filename) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        perror("Ошибка открытия файла миграции");
+        perror("Error opening migration file");
         return -1;
     }
 
@@ -16,7 +15,7 @@ int execute_migration(PGconn *conn, const char *filename) {
 
     char *query = (char *)malloc(file_size + 1);
     if (fread(query, 1, file_size, file) != file_size) {
-        perror("Ошибка чтения файла миграции");
+        perror("Error reading migration file");
         free(query);
         fclose(file);
         return -1;
@@ -26,13 +25,13 @@ int execute_migration(PGconn *conn, const char *filename) {
 
     PGresult *res = PQexec(conn, query);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Ошибка выполнения миграции: %s\n", PQerrorMessage(conn));
+        fprintf(stderr, "Migration execution error: %s\n", PQerrorMessage(conn));
         PQclear(res);
         free(query);
         return -1;
     }
 
-    printf("Миграция из файла %s выполнена успешно\n", filename);
+    printf("Migration from file %s executed successfully\n", filename);
 
     PQclear(res);
     free(query);

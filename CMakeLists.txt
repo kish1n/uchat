@@ -17,6 +17,7 @@ add_executable(uchat_auth
         src/db/migrations.h
         src/db/migrations.c
         src/db/db.h
+        src/logger/logger.c
 )
 
 target_link_libraries(uchat_auth ${YAML_LIBRARIES} pq)

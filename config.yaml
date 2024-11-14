@@ -4,3 +4,7 @@ database:
 server:
   port: ":8888"
   base_path: "/api/v1"
+
+logging:
+  level: "debug"                 # levels: "debug", "info", "warn", "error".
+  format: "text"                 # format options: "text" or "json"
