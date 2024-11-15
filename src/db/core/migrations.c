@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "migrations.h"
+#include "core.h"
 
 int execute_migration(PGconn *conn, const char *filename) {
     FILE *file = fopen(filename, "r");

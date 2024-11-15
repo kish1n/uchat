@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 typedef struct {
-    char url[256];       // URL базы данных
+    char url[256];
 } DatabaseConfig;
 
 typedef struct {

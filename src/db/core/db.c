@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "db.h"
+#include "core.h"
 
-// Function to connect to the database
 PGconn* connect_db(const char *connection_string) {
     PGconn *conn = PQconnectdb(connection_string);
 
@@ -15,8 +14,6 @@ PGconn* connect_db(const char *connection_string) {
     printf("Database connection established successfully\n");
     return conn;
 }
-
-// Function to close the database connection
 void disconnect_db(PGconn *conn) {
     if (conn) {
         PQfinish(conn);

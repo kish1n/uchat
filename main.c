@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include "src/config/config.h"
-#include "src/db/db.h"
-#include "src/db/migrations.h"
+#include "src/db/core/core.h"
+#include "src/db/core/migrations.h"
 #include "src/logger/logger.h"
+#include "src/db/users/users.h"
 
 int main() {
     Config config;
@@ -28,6 +29,8 @@ int main() {
     } else {
         log_message(INFO, "Migration is successful");
     }
+
+    create_user(conn, "username", "sdakodsdlakfs");
 
     disconnect_db(conn);
     log_message(INFO, "connection to database is closed");
