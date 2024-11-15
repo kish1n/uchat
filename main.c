@@ -1,60 +1,31 @@
 #include <stdio.h>
-#include <unistd.h>
-#include "src/services/service.h"
-#include "src/pkg/worker/worker.h"
+#include "src/pkg/json_parser/json_parser.h"
 
 int main() {
-    // Инициализация первого сервиса
-    Service *service1 = service_create("../config.yaml");
-    if (!service1) {
-        fprintf(stderr, "Failed to initialize service 1\n");
-        return 1;
+    const char *json_request = "{\"username\": \"testuser\", \"password\": \"securepass\", \"email\": \"user@example.com\"}";
+
+    char username[64];
+    char password[64];
+    char email[64];
+
+    // Извлечение данных из JSON
+    if (get_json_value(json_request, "username", username, sizeof(username)) == 0) {
+        printf("Username: %s\n", username);
+    } else {
+        printf("Failed to get 'username'\n");
     }
 
-    // Инициализация второго сервиса
-    Service *service2 = service_create("../config.yaml");
-    if (!service2) {
-        fprintf(stderr, "Failed to initialize service 2\n");
-        service_stop(service1);
-        return 1;
+    if (get_json_value(json_request, "password", password, sizeof(password)) == 0) {
+        printf("Password: %s\n", password);
+    } else {
+        printf("Failed to get 'password'\n");
     }
 
-    // Создание воркеров для каждого сервиса
-    Worker *worker1 = worker_create(service1, 2);  // Воркеры с 2 потоками
-    if (!worker1) {
-        fprintf(stderr, "Failed to create worker for service 1\n");
-        service_stop(service1);
-        service_stop(service2);
-        return 1;
+    if (get_json_value(json_request, "email", email, sizeof(email)) == 0) {
+        printf("Email: %s\n", email);
+    } else {
+        printf("Failed to get 'email'\n");
     }
 
-    Worker *worker2 = worker_create(service2, 2);
-    if (!worker2) {
-        fprintf(stderr, "Failed to create worker for service 2\n");
-        worker_free(worker1);
-        service_stop(service1);
-        service_stop(service2);
-        return 1;
-    }
-
-    // Запуск воркеров
-    worker_start(worker1);
-    worker_start(worker2);
-
-    // Имитация выполнения основного процесса
-    printf("Services are running...\n");
-    sleep(5);  // Подождите 5 секунд, чтобы дать воркерам поработать
-
-    // Остановка воркеров и освобождение ресурсов
-    worker_stop(worker1);
-    worker_stop(worker2);
-    worker_free(worker1);
-    worker_free(worker2);
-
-    // Остановка сервисов
-    service_stop(service1);
-    service_stop(service2);
-
-    printf("Services stopped.\n");
     return 0;
 }
