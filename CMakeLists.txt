@@ -21,6 +21,7 @@ add_executable(uchat_auth
         src/pkg/worker/worker.c
         src/services/service.c
         src/pkg/json_parser/json_parser.c
+        src/pkg/crypto/crypto.c
 )
 
 target_link_libraries(uchat_auth ${YAML_LIBRARIES} pq)
