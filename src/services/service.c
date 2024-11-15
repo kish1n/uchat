@@ -3,6 +3,28 @@
 #include <stdlib.h>
 #include "../pkg/config/config.h"
 #include <microhttpd.h>
+#include <libpq-fe.h>
+#include <string.h>
+
+#include "auth/handlers/auth_handlers.h"
+
+enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
+                                const char *url, const char *method,
+                                const char *version, const char *upload_data,
+                                size_t *upload_data_size, void **con_cls) {
+    Auth *auth = (Auth *)cls;
+    if (strcmp(url, "/api/v1/register") == 0 && strcmp(method, "POST") == 0) {
+        return handle_register_request(auth, connection);
+    }
+    const char *error_message = "{\"error\": \"Not found\"}";
+    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(error_message),
+                                                                    (void *)error_message,
+                                                                    MHD_RESPMEM_PERSISTENT);
+    MHD_add_response_header(response, "Content-Type", "application/json");
+    enum MHD_Result ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
+    MHD_destroy_response(response);
+    return ret;
+}
 
 Service* service_create(const char *config_path) {
     Service *service = (Service *)malloc(sizeof(Service));
