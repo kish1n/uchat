@@ -9,7 +9,6 @@ int get_json_value(const char *json_str, const char *key, char *value, size_t va
         return -1;
     }
 
-    // Извлекаем значение по ключу
     struct json_object *json_value;
     if (json_object_object_get_ex(parsed_json, key, &json_value)) {
         const char *str_value = json_object_get_string(json_value);

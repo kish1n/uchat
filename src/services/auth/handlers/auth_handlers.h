@@ -1,10 +1,13 @@
-#ifndef AUTH_HANDLERS_H
-#define AUTH_HANDLERS_H
+#ifndef SERVICE_H
+#define SERVICE_H
 
 #include <microhttpd.h>
-#include "../auth.h"
+#include "../../auth/auth.h"
 
-// Обработчик для регистрации пользователя
-int handle_register_request(Auth *auth, struct MHD_Connection *connection);
+// Объявление request_handler
+enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
+                                const char *url, const char *method,
+                                const char *version, const char *upload_data,
+                                size_t *upload_data_size, void **con_cls);
 
-#endif // AUTH_HANDLERS_H
+#endif // SERVICE_H

@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <json-c/json.h>
+#include <stdio.h>
+#include <string.h>
+#include <microhttpd.h>
+#include <libpq-fe.h>
 
 Auth* auth_create(const char *config_path, const char *jwt_secret) {
     Auth *auth = (Auth *)malloc(sizeof(Auth));

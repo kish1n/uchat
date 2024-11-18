@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "auth/handlers/auth_handlers.h"
+#include "auth/auth.h"
 
 enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
                                 const char *url, const char *method,
