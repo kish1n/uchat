@@ -29,6 +29,9 @@ add_executable(uchat_auth
         src/services/service.c
         src/services/handle_request.c
         src/services/free_request.c
+        src/services/handle_register.c
+
+        src/services/auth/handle_register.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c)

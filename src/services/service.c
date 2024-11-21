@@ -1,6 +1,10 @@
+#include <stdlib.h>
+#include <microhttpd.h>
 #include "service.h"
+#include "../db/core/core.h"
+#include "auth/auth_handlers.h"
 
-Server *server_init(int port) {
+Server* server_init(int port, PGconn *db_conn) {
     Server *server = malloc(sizeof(Server));
     if (!server) {
         fprintf(stderr, "Failed to allocate memory for server\n");
@@ -8,8 +12,10 @@ Server *server_init(int port) {
     }
     server->port = port;
     server->daemon = NULL;
+    server->db_conn = db_conn; // Сохраняем соединение с базой данных
     return server;
 }
+
 
 int server_start(Server *server) {
     server->daemon = MHD_start_daemon(

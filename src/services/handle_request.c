@@ -1,65 +1,41 @@
 #include "service.h"
 #include <stdlib.h>
 #include <json-c/json.h>
+#include "../services/service.h"       // Ваш заголовочный файл для структуры Server
+#include "../db/core/core.h"
+#
+#include "auth/auth_handlers.h"
 
 enum MHD_Result handle_request(void *cls,
-    struct MHD_Connection *connection,
-    const char *url,
-    const char *method,
-    const char *version,
-    const char *upload_data,
-    size_t *upload_data_size,
-    void **con_cls) {
-    (void)cls; (void)url; (void)version;
+                               struct MHD_Connection *connection,
+                               const char *url,
+                               const char *method,
+                               const char *version,
+                               const char *upload_data,
+                               size_t *upload_data_size,
+                               void **con_cls) {
 
-    if (*con_cls == NULL) {
-        RequestData *request_data = calloc(1, sizeof(RequestData));
-        if (!request_data) return MHD_NO;
-        *con_cls = request_data;
-        return MHD_YES;
+    Config config;
+    if (load_config("../config.yaml", &config) != 0) {
+        fprintf(stderr, "Failed to load config\n");
+        return EXIT_FAILURE;
     }
 
-    RequestData *request_data = (RequestData *)*con_cls;
-
-    if (strcmp(method, "POST") != 0) {
-        const char *error_msg = "Only POST method is supported";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
-        MHD_destroy_response(response);
-        return ret;
+    PGconn *db_conn = connect_db(config.database.url);
+    if (db_conn == NULL || PQstatus(db_conn) != CONNECTION_OK) {
+        fprintf(stderr, "Failed to connect to database: %s\n", PQerrorMessage(db_conn));
+        if (db_conn) disconnect_db(db_conn);
+        return EXIT_FAILURE;
     }
 
-    if (*upload_data_size > 0) {
-        request_data->data = realloc(request_data->data, request_data->size + *upload_data_size + 1);
-        if (!request_data->data) return MHD_NO;
-        memcpy(request_data->data + request_data->size, upload_data, *upload_data_size);
-        request_data->size += *upload_data_size;
-        request_data->data[request_data->size] = '\0';
-        *upload_data_size = 0;
-        return MHD_YES;
+    if (strcmp(url, "/register") == 0 && strcmp(method, "POST") == 0) {
+        return handle_register(cls, connection, url, method, version, upload_data, upload_data_size, con_cls, db_conn);
     }
 
-    struct json_object *parsed_json = json_tokener_parse(request_data->data);
-    if (!parsed_json) {
-        const char *error_msg = "Invalid JSON";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        free_request_data(request_data);
-        return ret;
-    }
-
-    const char *response_data = json_object_to_json_string_ext(parsed_json, JSON_C_TO_STRING_PLAIN);
+    const char *error_msg = "Endpoint not found";
     struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(response_data), (void *)response_data, MHD_RESPMEM_MUST_COPY);
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+        strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
     MHD_destroy_response(response);
-
-    json_object_put(parsed_json);
-    free_request_data(request_data);
-    *con_cls = NULL;
-
     return ret;
 }
