@@ -1,6 +1,5 @@
 #include "service.h"
 
-
 Service *service_create(const char *jwt_secret) {
     Service *service = (Service *)malloc(sizeof(Service));
     if (!service) {
@@ -77,23 +76,5 @@ void service_destroy(Service *service) {
         service_stop(service);
     }
     free(service);
-}
-
-static int handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method,
-                          const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) {
-    Service *service = (Service *)cls;
-
-    for (int i = 0; i < service->handler_count; i++) {
-        EndpointHandler *handler = &service->handlers[i];
-        if (strcmp(handler->path, url) == 0 && strcmp(handler->method, method) == 0) {
-            return handler->handler(connection);
-        }
-    }
-
-    const char *not_found = "{\"error\": \"Endpoint not found\"}";
-    struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found), (void *)not_found, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-    MHD_destroy_response(response);
-    return ret;
 }
 

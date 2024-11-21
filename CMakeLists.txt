@@ -28,7 +28,11 @@ add_executable(uchat_auth
         src/pkg/crypto/crypto.c
 
         src/services/service.c
-        ${AUTH_HANDLERS_SRC}
+        src/services/handle_request.c
+
+        src/services/auth/handlers/login.c
+        src/services/auth/handlers/register.c
+        src/services/auth/handlers/get_request_json.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c)

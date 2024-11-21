@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <microhttpd.h>
+#include "auth/handlers/handlers.h"
 
 #define MAX_HANDLERS 100
 #define MAX_PATH_LEN 256
@@ -30,9 +31,17 @@ void service_init(Service *service);
 void service_start(Service *service);
 void service_stop(Service *service);
 void service_destroy(Service *service);
-
 void service_register_endpoint(Service *service, const char *path, const char *method, int (*handler)(struct MHD_Connection *));
-static int handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method,
-                          const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls);
+
+enum MHD_Result handle_request(
+    void *cls,
+    struct MHD_Connection *connection,
+    const char *url,
+    const char *method,
+    const char *version,
+    const char *upload_data,
+    size_t *upload_data_size,
+    void **con_cls
+);
 
 #endif

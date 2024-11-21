@@ -1,6 +1,5 @@
 #include "handlers.h"
 
-// Пример обработчиков
 int login_handler(struct MHD_Connection *connection) {
     const char *response = "{\"message\": \"Login successful\"}";
     struct MHD_Response *http_response = MHD_create_response_from_buffer(strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
