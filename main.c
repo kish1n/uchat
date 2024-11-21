@@ -1,21 +1,24 @@
 #include <stdio.h>
-#include "src/services/auth/auth.h"
+#include "./src/services/service.h" // Предполагаем, что вся реализация сервиса вынесена в service.h и service.c
 
+// Точка входа
 int main() {
-
-    Auth *auth_service = auth_create("../config.yaml", "secret");
-    if (!auth_service) {
-        fprintf(stderr, "Failed to initialize auth service\n");
+    Service *service = service_create("my_secret_key");
+    if (!service) {
+        fprintf(stderr, "Failed to create service\n");
         return 1;
     }
 
-    auth_start(auth_service);
+    service_init(service);
 
-    printf("Auth service is running. Press Enter to stop...\n");
-    getchar();
+    // Регистрируем эндпоинты
+    service_register_endpoint(service, "/login", "POST", login_handler);
+    service_register_endpoint(service, "/register", "POST", register_handler);
 
-    auth_stop(auth_service);
-    auth_free(auth_service);
+    // Запуск сервиса
+    service_start(service);
 
+    // Уничтожение сервиса
+    service_destroy(service);
     return 0;
 }

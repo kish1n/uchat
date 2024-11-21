@@ -1,20 +1,39 @@
 #ifndef SERVICE_H
 #define SERVICE_H
 
-#include <libpq-fe.h>
-#include "../pkg/config/config.h"
-#include "../pkg/logger/logger.h"
+#include <stdio.h>
+#include <microhttpd.h>
+
+#define MAX_HANDLERS 100
+#define MAX_PATH_LEN 256
+#define PORT 8080
 
 typedef struct {
-    PGconn *db_connection;          // db conn
-    Config config;                  // cfg service
-    struct MHD_Daemon *http_daemon; // ex HTTP-srv
-    int http_port;                  // port for HTTP-srv
-    int is_running;                 // status
+    char path[MAX_PATH_LEN];                 // Путь эндпоинта (например, "/login")
+    const char *method;                      // Метод HTTP (GET, POST и т.д.)
+    int (*handler)(struct MHD_Connection *); // Функция-обработчик
+} EndpointHandler;
+
+typedef struct {
+    int running;                             // Флаг состояния сервиса
+    char jwt_secret[256];                    // Секрет для JWT
+    EndpointHandler handlers[MAX_HANDLERS]; // Зарегистрированные эндпоинты
+    int handler_count;                       // Количество зарегистрированных обработчиков
+    struct MHD_Daemon *daemon;               // HTTP-демон
 } Service;
 
-Service* service_create(const char *config_path);
+// Прототипы функций
+Service *service_create(const char *jwt_secret);
+void service_init(Service *service);
 void service_start(Service *service);
 void service_stop(Service *service);
+void service_destroy(Service *service);
+
+void service_register_endpoint(Service *service, const char *path, const char *method, int (*handler)(struct MHD_Connection *));
+static int handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method,
+                          const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls);
+
+int login_handler(struct MHD_Connection *connection);
+int register_handler(struct MHD_Connection *connection);
 
 #endif
