@@ -1,80 +1,40 @@
 #include "service.h"
 
-Service *service_create(const char *jwt_secret) {
-    Service *service = (Service *)malloc(sizeof(Service));
-    if (!service) {
-        fprintf(stderr, "Failed to allocate memory for Service\n");
+Server *server_init(int port) {
+    Server *server = malloc(sizeof(Server));
+    if (!server) {
+        fprintf(stderr, "Failed to allocate memory for server\n");
         return NULL;
     }
-
-    service->running = 0;
-    service->handler_count = 0;
-    strncpy(service->jwt_secret, jwt_secret, sizeof(service->jwt_secret) - 1);
-    service->jwt_secret[sizeof(service->jwt_secret) - 1] = '\0';
-    service->daemon = NULL;
-
-    return service;
+    server->port = port;
+    server->daemon = NULL;
+    return server;
 }
 
-void service_init(Service *service) {
-    printf("Service initialized with JWT secret: %s\n", service->jwt_secret);
+int server_start(Server *server) {
+    server->daemon = MHD_start_daemon(
+        MHD_USE_SELECT_INTERNALLY, server->port, NULL, NULL,
+        &handle_request, NULL, MHD_OPTION_NOTIFY_COMPLETED, &free_request_data, NULL, MHD_OPTION_END);
+    if (!server->daemon) {
+        fprintf(stderr, "Failed to start server on port %d\n", server->port);
+        return -1;
+    }
+
+    printf("Server is running on port %d\n", server->port);
+    return 0;
 }
 
-void service_register_endpoint(Service *service, const char *path, const char *method, int (*handler)(struct MHD_Connection *)) {
-    if (service->handler_count >= MAX_HANDLERS) {
-        fprintf(stderr, "Cannot register more endpoints, limit reached.\n");
-        return;
+void server_stop(Server *server) {
+    if (server->daemon) {
+        MHD_stop_daemon(server->daemon);
+        server->daemon = NULL;
+        printf("Server stopped\n");
     }
-
-    EndpointHandler *new_handler = &service->handlers[service->handler_count++];
-    strncpy(new_handler->path, path, MAX_PATH_LEN - 1);
-    new_handler->path[MAX_PATH_LEN - 1] = '\0';
-    new_handler->method = method;
-    new_handler->handler = handler;
-
-    printf("Registered endpoint: %s %s\n", method, path);
 }
 
-void service_start(Service *service) {
-    if (service->running) {
-        printf("Service is already running.\n");
-        return;
+void server_destroy(Server *server) {
+    if (server) {
+        server_stop(server);
+        free(server);
     }
-
-    printf("Starting service on port %d...\n", PORT);
-    service->running = 1;
-
-    service->daemon = MHD_start_daemon(
-        MHD_USE_SELECT_INTERNALLY, PORT, NULL, NULL, &handle_request, service, MHD_OPTION_END);
-
-    if (!service->daemon) {
-        fprintf(stderr, "Failed to start HTTP server\n");
-        service->running = 0;
-        return;
-    }
-
-    printf("Service started. Press Ctrl+C to stop.\n");
-    while (service->running) {
-        sleep(1);
-    }
-
-    MHD_stop_daemon(service->daemon);
 }
-
-void service_stop(Service *service) {
-    if (!service->running) {
-        printf("Service is not running.\n");
-        return;
-    }
-
-    service->running = 0;
-}
-
-void service_destroy(Service *service) {
-    if (!service) return;
-    if (service->running) {
-        service_stop(service);
-    }
-    free(service);
-}
-

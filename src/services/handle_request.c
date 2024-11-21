@@ -2,80 +2,64 @@
 #include <stdlib.h>
 #include <json-c/json.h>
 
-// Структура для хранения данных тела запроса
-typedef struct {
-    char *data;
-    size_t size;
-} RequestBuffer;
-
-// Глобальный буфер (можно улучшить, сделав буфер на основе context)
-static RequestBuffer request_buffer = {NULL, 0};
-
-enum MHD_Result handle_request(
-    void *cls,
+enum MHD_Result handle_request(void *cls,
     struct MHD_Connection *connection,
     const char *url,
     const char *method,
     const char *version,
     const char *upload_data,
     size_t *upload_data_size,
-    void **con_cls
-) {
-    printf("Received request: URL=%s, Method=%s\n", url, method);
+    void **con_cls) {
+    (void)cls; (void)url; (void)version;
 
-    if (strcmp(method, "POST") == 0 && strcmp(url, "/register") == 0) {
-        if (*upload_data_size > 0) {
-            request_buffer.data = realloc(request_buffer.data, request_buffer.size + *upload_data_size + 1);
-            if (!request_buffer.data) {
-                fprintf(stderr, "Failed to allocate memory for request buffer\n");
-                return MHD_NO;
-            }
-
-            memcpy(request_buffer.data + request_buffer.size, upload_data, *upload_data_size);
-            request_buffer.size += *upload_data_size;
-            request_buffer.data[request_buffer.size] = '\0'; // Завершаем строку
-
-            *upload_data_size = 0; // Указываем, что данные обработаны
-            return MHD_YES;
-        }
-
-        // Когда upload_data == NULL, все данные получены
-        if (upload_data == NULL && request_buffer.size > 0) {
-            // Парсим JSON
-            struct json_object *request_json = json_tokener_parse(request_buffer.data);
-            if (!request_json) {
-                const char *response = "{\"error\": \"Invalid JSON\"}";
-                struct MHD_Response *http_response = MHD_create_response_from_buffer(
-                    strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
-                int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, http_response);
-                MHD_destroy_response(http_response);
-                free(request_buffer.data); // Освобождаем память
-                request_buffer.data = NULL;
-                request_buffer.size = 0;
-                return ret;
-            }
-
-            // Ответим тем же JSON, который получили
-            const char *response = json_object_to_json_string(request_json);
-            struct MHD_Response *http_response = MHD_create_response_from_buffer(
-                strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
-            int ret = MHD_queue_response(connection, MHD_HTTP_OK, http_response);
-            MHD_destroy_response(http_response);
-
-            // Освобождаем ресурсы
-            json_object_put(request_json);
-            free(request_buffer.data);
-            request_buffer.data = NULL;
-            request_buffer.size = 0;
-            return ret;
-        }
+    if (*con_cls == NULL) {
+        RequestData *request_data = calloc(1, sizeof(RequestData));
+        if (!request_data) return MHD_NO;
+        *con_cls = request_data;
+        return MHD_YES;
     }
 
-    // Обработка неизвестных запросов
-    const char *response = "{\"error\": \"Endpoint not found\"}";
-    struct MHD_Response *http_response = MHD_create_response_from_buffer(
-        strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, http_response);
-    MHD_destroy_response(http_response);
+    RequestData *request_data = (RequestData *)*con_cls;
+
+    if (strcmp(method, "POST") != 0) {
+        const char *error_msg = "Only POST method is supported";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
+        MHD_destroy_response(response);
+        return ret;
+    }
+
+    if (*upload_data_size > 0) {
+        request_data->data = realloc(request_data->data, request_data->size + *upload_data_size + 1);
+        if (!request_data->data) return MHD_NO;
+        memcpy(request_data->data + request_data->size, upload_data, *upload_data_size);
+        request_data->size += *upload_data_size;
+        request_data->data[request_data->size] = '\0';
+        *upload_data_size = 0;
+        return MHD_YES;
+    }
+
+    struct json_object *parsed_json = json_tokener_parse(request_data->data);
+    if (!parsed_json) {
+        const char *error_msg = "Invalid JSON";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+        MHD_destroy_response(response);
+        free_request_data(request_data);
+        return ret;
+    }
+
+    const char *response_data = json_object_to_json_string_ext(parsed_json, JSON_C_TO_STRING_PLAIN);
+    struct MHD_Response *response = MHD_create_response_from_buffer(
+        strlen(response_data), (void *)response_data, MHD_RESPMEM_MUST_COPY);
+    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    MHD_destroy_response(response);
+
+    json_object_put(parsed_json);
+    free_request_data(request_data);
+    *con_cls = NULL;
+
     return ret;
 }
