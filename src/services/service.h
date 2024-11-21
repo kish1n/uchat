@@ -2,6 +2,8 @@
 #define SERVICE_H
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <microhttpd.h>
 
 #define MAX_HANDLERS 100
@@ -32,8 +34,5 @@ void service_destroy(Service *service);
 void service_register_endpoint(Service *service, const char *path, const char *method, int (*handler)(struct MHD_Connection *));
 static int handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method,
                           const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls);
-
-int login_handler(struct MHD_Connection *connection);
-int register_handler(struct MHD_Connection *connection);
 
 #endif

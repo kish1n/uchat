@@ -1,10 +1,6 @@
 #include "service.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <microhttpd.h>
-#include <string.h>
 
-// Создание сервиса
+
 Service *service_create(const char *jwt_secret) {
     Service *service = (Service *)malloc(sizeof(Service));
     if (!service) {
@@ -21,12 +17,10 @@ Service *service_create(const char *jwt_secret) {
     return service;
 }
 
-// Инициализация сервиса
 void service_init(Service *service) {
     printf("Service initialized with JWT secret: %s\n", service->jwt_secret);
 }
 
-// Регистрация эндпоинта
 void service_register_endpoint(Service *service, const char *path, const char *method, int (*handler)(struct MHD_Connection *)) {
     if (service->handler_count >= MAX_HANDLERS) {
         fprintf(stderr, "Cannot register more endpoints, limit reached.\n");
@@ -42,7 +36,6 @@ void service_register_endpoint(Service *service, const char *path, const char *m
     printf("Registered endpoint: %s %s\n", method, path);
 }
 
-// Запуск сервиса
 void service_start(Service *service) {
     if (service->running) {
         printf("Service is already running.\n");
@@ -63,13 +56,12 @@ void service_start(Service *service) {
 
     printf("Service started. Press Ctrl+C to stop.\n");
     while (service->running) {
-        sleep(1); // Поддерживаем сервис в рабочем состоянии
+        sleep(1);
     }
 
     MHD_stop_daemon(service->daemon);
 }
 
-// Остановка сервиса
 void service_stop(Service *service) {
     if (!service->running) {
         printf("Service is not running.\n");
@@ -79,7 +71,6 @@ void service_stop(Service *service) {
     service->running = 0;
 }
 
-// Уничтожение сервиса
 void service_destroy(Service *service) {
     if (!service) return;
     if (service->running) {
@@ -88,12 +79,10 @@ void service_destroy(Service *service) {
     free(service);
 }
 
-// Обработка запросов
 static int handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method,
                           const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) {
     Service *service = (Service *)cls;
 
-    // Поиск подходящего обработчика
     for (int i = 0; i < service->handler_count; i++) {
         EndpointHandler *handler = &service->handlers[i];
         if (strcmp(handler->path, url) == 0 && strcmp(handler->method, method) == 0) {
@@ -101,7 +90,6 @@ static int handle_request(void *cls, struct MHD_Connection *connection, const ch
         }
     }
 
-    // Если обработчик не найден, возвращаем 404
     const char *not_found = "{\"error\": \"Endpoint not found\"}";
     struct MHD_Response *response = MHD_create_response_from_buffer(strlen(not_found), (void *)not_found, MHD_RESPMEM_PERSISTENT);
     int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
@@ -109,19 +97,3 @@ static int handle_request(void *cls, struct MHD_Connection *connection, const ch
     return ret;
 }
 
-// Пример обработчиков
-int login_handler(struct MHD_Connection *connection) {
-    const char *response = "{\"message\": \"Login successful\"}";
-    struct MHD_Response *http_response = MHD_create_response_from_buffer(strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, http_response);
-    MHD_destroy_response(http_response);
-    return ret;
-}
-
-int register_handler(struct MHD_Connection *connection) {
-    const char *response = "{\"message\": \"Register successful\"}";
-    struct MHD_Response *http_response = MHD_create_response_from_buffer(strlen(response), (void *)response, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, http_response);
-    MHD_destroy_response(http_response);
-    return ret;
-}
