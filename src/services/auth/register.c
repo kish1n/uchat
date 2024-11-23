@@ -1,5 +1,6 @@
 #include "../../db/core/users/users.h"
 #include "../../db/core/core.h"
+#include "../../pkg/crypto/crypto.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,9 +69,17 @@ enum MHD_Result handle_register(void *cls,
         return ret;
     }
 
-    // Хэширование пароля (упрощённо)
-    char passhash[256];
-    snprintf(passhash, sizeof(passhash), "hash_%s", password); // Замените на реальное хэширование
+    //hash password
+    char *passhash = hash_password(password);
+    if (!passhash) {
+        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password hashing failed\"}";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    }
 
     int result = create_user(db_conn, username, passhash);
 

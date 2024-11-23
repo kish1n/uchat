@@ -29,9 +29,13 @@ add_executable(uchat_auth
         src/services/service.c
         src/services/handle_request.c
         src/services/free_request.c
-        src/services/handle_register.c
 
-        src/services/auth/handle_register.c
+        src/services/auth/register.c
+        src/services/auth/login.c
+        src/pkg/jwt_utils/jwt_utils.c
+        src/db/core/users/get_user_by_uuid.c
+        src/db/core/users/get_user_by_username.c
+        src/db/core/users/free_user.c
 )
 
-target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c)
+target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

@@ -31,6 +31,9 @@ enum MHD_Result handle_request(void *cls,
     if (strcmp(url, "/register") == 0 && strcmp(method, "POST") == 0) {
         return handle_register(cls, connection, url, method, version, upload_data, upload_data_size, con_cls, db_conn);
     }
+    if (strcmp(url, "/login") == 0 && strcmp(method, "POST") == 0) {
+        return handle_login(cls, connection, url, method, version, upload_data, upload_data_size, con_cls, db_conn);
+    }
 
     const char *error_msg = "Endpoint not found";
     struct MHD_Response *response = MHD_create_response_from_buffer(
