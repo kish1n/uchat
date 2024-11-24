@@ -12,6 +12,18 @@
 #define PORT 8080
 
 typedef struct {
+    void *cls;
+    struct MHD_Connection *connection;
+    const char *url;
+    const char *method;
+    const char *version;
+    const char *upload_data;
+    size_t *upload_data_size;
+    void **con_cls;
+    PGconn *db_conn;
+} HttpContext;
+
+typedef struct {
     int port;
     struct MHD_Daemon *daemon;
     PGconn *db_conn;
