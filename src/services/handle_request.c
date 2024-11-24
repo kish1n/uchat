@@ -3,7 +3,6 @@
 #include <json-c/json.h>
 #include "../services/service.h"       // Ваш заголовочный файл для структуры Server
 #include "../db/core/core.h"
-#
 #include "auth/auth_handlers.h"
 
 enum MHD_Result handle_request(void *cls,
@@ -29,11 +28,23 @@ enum MHD_Result handle_request(void *cls,
         return EXIT_FAILURE;
     }
 
+    HttpContext context = {
+        .cls = cls,
+        .connection = connection,
+        .url = url,
+        .method = method,
+        .version = version,
+        .upload_data = upload_data,
+        .upload_data_size = upload_data_size,
+        .con_cls = con_cls,
+        .db_conn = db_conn
+    };
+
     if (strcmp(url, "/register") == 0 && strcmp(method, "POST") == 0) {
-        return handle_register(cls, connection, url, method, version, upload_data, upload_data_size, con_cls, db_conn);
+        return handle_register(&context);
     }
     if (strcmp(url, "/login") == 0 && strcmp(method, "POST") == 0) {
-        return handle_login(cls, connection, url, method, version, upload_data, upload_data_size, con_cls, db_conn);
+        return handle_login(&context);
     }
 
     const char *error_msg = "Endpoint not found";

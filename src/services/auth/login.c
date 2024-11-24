@@ -8,42 +8,37 @@
 
 #include "auth_handlers.h"
 
-enum MHD_Result handle_login(void *cls,
-                                struct MHD_Connection *connection,
-                                const char *url,
-                                const char *method,
-                                const char *version,
-                                const char *upload_data,
-                                size_t *upload_data_size,
-                                void **con_cls,
-                                PGconn *db_conn) {
-    (void)cls; (void)url; (void)version;
+enum MHD_Result handle_login(HttpContext *context) {
+    if (!context) {
+        logging(ERROR, "Invalid context passed to handle_login");
+        return MHD_NO;
+    }
 
-    if (*con_cls == NULL) {
+    if (*context->con_cls == NULL) {
         char *buffer = calloc(1, sizeof(char));
-        *con_cls = buffer;
+        *context->con_cls = buffer;
         return MHD_YES;
     }
 
-    char *data = (char *)*con_cls;
+    char *data = (char *)*context->con_cls;
 
-    if (*upload_data_size > 0) {
-        data = realloc(data, strlen(data) + *upload_data_size + 1);
-        strncat(data, upload_data, *upload_data_size);
-        *upload_data_size = 0;
-        *con_cls = data;
+    if (*context->upload_data_size > 0) {
+        data = realloc(data, strlen(data) + *context->upload_data_size + 1);
+        strncat(data, context->upload_data, *context->upload_data_size);
+        *context->upload_data_size = 0;
+        *context->con_cls = data;
         return MHD_YES;
     }
 
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
-    *con_cls = NULL;
+    *context->con_cls = NULL;
 
     if (!parsed_json) {
         const char *error_msg = "Invalid JSON";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
 
         return ret;
@@ -63,34 +58,34 @@ enum MHD_Result handle_login(void *cls,
         const char *error_msg = "Missing username or password";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
 
-        logging(INFO, "Try login as %s incorrect password or username", username);
+        logging(INFO, "Try login as %s failed: missing username or password", username);
 
         return ret;
     }
 
-    User *user = get_user_by_username(db_conn, username);
+    User *user = get_user_by_username(context->db_conn, username);
     if (!user) {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password or login is incorect\"}";
+        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password or login is incorrect\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
         return ret;
     }
 
-    //hash password
     int cond = verify_password(password, user->passhash);
     if (!cond) {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password or login is incorect\"}";
+        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password or login is incorrect\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
         MHD_destroy_response(response);
+        free_user(user);
         json_object_put(parsed_json);
         return ret;
     }
@@ -100,7 +95,7 @@ enum MHD_Result handle_login(void *cls,
         const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to generate token\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
         free_user(user);
         json_object_put(parsed_json);
@@ -114,7 +109,7 @@ enum MHD_Result handle_login(void *cls,
     const char *response_str = json_object_to_json_string(response_json);
     struct MHD_Response *response = MHD_create_response_from_buffer(
         strlen(response_str), (void *)response_str, MHD_RESPMEM_MUST_COPY);
-    int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
 
     json_object_put(response_json);
@@ -122,7 +117,7 @@ enum MHD_Result handle_login(void *cls,
     free_user(user);
     json_object_put(parsed_json);
 
-    logging(INFO, "User %s logged in", username);
+    logging(INFO, "User %s logged in successfully", username);
 
     return ret;
 }
