@@ -19,7 +19,7 @@ add_executable(uchat_auth
         src/db/core/db.c
         src/db/core/migrations.c
         src/db/core/core.h
-        src/db/core/users/users.c
+        src/db/core/users/delete_user.c
 
         src/pkg/config/config.c
         src/pkg/config/logger.c
@@ -38,6 +38,21 @@ add_executable(uchat_auth
         src/db/core/users/free_user.c
         src/pkg/config/logger.c
         src/pkg/config/logger.c
+        src/db/core/users/update_user_username.c
+        src/db/core/users/update_user_password.c
+        src/db/core/users/create_user.c
+        src/db/core/chats/create_chat.c
+        src/db/core/chats/delete_chat.c
+        src/db/core/chats/get_chat_by_id.c
+        src/db/core/chats/update_chat_name.c
+        src/db/core/chat_members/add_chat_member.c
+        src/db/core/chat_members/get_chat_members.c
+        src/db/core/chat_members/is_user_in_chat.c
+        src/db/core/chat_members/remove_chat_member.c
+        src/db/core/messages/get_messages_by_chat.c
+        src/db/core/messages/get_message_by_id.c
+        src/db/core/messages/delete_message.c
+        src/db/core/messages/create_message.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)
