@@ -3,34 +3,32 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../../../pkg/config/config.h"
+
 User* get_user_by_uuid(PGconn *conn, const char *uuid) {
     const char *query = "SELECT uuid, username, passhash, created_at FROM users WHERE uuid = $1;";
     const char *paramValues[1] = {uuid};
 
-    // Выполняем запрос
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error fetching user: %s\n", PQerrorMessage(conn));
+        log_db_error(conn, "Error fetching user");
         PQclear(res);
         return NULL;
     }
 
-    // Проверяем, что пользователь найден
     if (PQntuples(res) == 0) {
-        fprintf(stderr, "No user found with UUID: %s\n", uuid);
+        log_db_error(conn, "No user found with UUID");
         PQclear(res);
         return NULL;
     }
 
-    // Создаем и заполняем структуру User
     User *user = malloc(sizeof(User));
     if (!user) {
-        fprintf(stderr, "Memory allocation failed\n");
+        log_db_error(conn, "Failed to allocate memory for user");
         PQclear(res);
         return NULL;
     }
 
-    // Копируем данные из результата запроса
     user->uuid = strdup(PQgetvalue(res, 0, 0));
     user->username = strdup(PQgetvalue(res, 0, 1));
     user->passhash = strdup(PQgetvalue(res, 0, 2));

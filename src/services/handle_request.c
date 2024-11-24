@@ -17,13 +17,14 @@ enum MHD_Result handle_request(void *cls,
 
     Config config;
     if (load_config("../config.yaml", &config) != 0) {
-        fprintf(stderr, "Failed to load config\n");
+        logging(ERROR, "Failed to load config");
+
         return EXIT_FAILURE;
     }
 
     PGconn *db_conn = connect_db(config.database.url);
     if (db_conn == NULL || PQstatus(db_conn) != CONNECTION_OK) {
-        fprintf(stderr, "Failed to connect to database: %s\n", PQerrorMessage(db_conn));
+        logging(ERROR, "Failed to connect to database: %s", PQerrorMessage(db_conn));
         if (db_conn) disconnect_db(db_conn);
         return EXIT_FAILURE;
     }

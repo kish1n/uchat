@@ -1,5 +1,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+#include <libpq-fe.h>
+
+typedef enum {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR
+} LogLevel;
 
 typedef struct {
     char url[256];              // URL подключения к базе данных
@@ -14,13 +22,13 @@ typedef struct {
 } ServerConfig;
 
 typedef struct {
-    char level[16];             // Уровень логирования
-    char format[16];            // Формат логирования ("text" или "json")
-    char output_file[256];      // Файл для логирования
+    char level[16];
+    char format[16];
+    char output_file[256];
 } LoggingConfig;
 
 typedef struct {
-    char jwt_secret[256];       // Секрет для JWT-токенов
+    char jwt_secret[256];
 } SecurityConfig;
 
 typedef struct {
@@ -31,5 +39,10 @@ typedef struct {
 } Config;
 
 int load_config(const char *filename, Config *config);
+
+void init_logger(const LoggingConfig *logging_config);
+void logging(LogLevel level, const char *format, ...);
+void log_db_error(PGconn *db_conn, const char *context_message);
+void close_logger();
 
 #endif // CONFIG_H

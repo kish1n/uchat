@@ -22,7 +22,7 @@ add_executable(uchat_auth
         src/db/core/users/users.c
 
         src/pkg/config/config.c
-        src/pkg/logger/logger.c
+        src/pkg/config/logger.c
         src/pkg/json_parser/json_parser.c
         src/pkg/crypto/crypto.c
 
@@ -36,6 +36,8 @@ add_executable(uchat_auth
         src/db/core/users/get_user_by_uuid.c
         src/db/core/users/get_user_by_username.c
         src/db/core/users/free_user.c
+        src/pkg/config/logger.c
+        src/pkg/config/logger.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

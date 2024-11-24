@@ -27,7 +27,6 @@ enum MHD_Result handle_login(void *cls,
 
     char *data = (char *)*con_cls;
 
-    // Читаем данные POST-запроса
     if (*upload_data_size > 0) {
         data = realloc(data, strlen(data) + *upload_data_size + 1);
         strncat(data, upload_data, *upload_data_size);
@@ -36,7 +35,6 @@ enum MHD_Result handle_login(void *cls,
         return MHD_YES;
     }
 
-    // Парсим JSON
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
     *con_cls = NULL;
@@ -47,6 +45,7 @@ enum MHD_Result handle_login(void *cls,
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
+
         return ret;
     }
 
@@ -67,6 +66,9 @@ enum MHD_Result handle_login(void *cls,
         int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
+
+        logging(INFO, "Try login as %s incorrect password or username", username);
+
         return ret;
     }
 
@@ -105,7 +107,6 @@ enum MHD_Result handle_login(void *cls,
         return ret;
     }
 
-    // Формируем JSON-ответ с токеном
     struct json_object *response_json = json_object_new_object();
     json_object_object_add(response_json, "status", json_object_new_string("success"));
     json_object_object_add(response_json, "token", json_object_new_string(token));
@@ -120,5 +121,8 @@ enum MHD_Result handle_login(void *cls,
     free(token);
     free_user(user);
     json_object_put(parsed_json);
+
+    logging(INFO, "User %s logged in", username);
+
     return ret;
 }

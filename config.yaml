@@ -1,17 +1,18 @@
 database:
   url: "postgresql://postgres:postgres@localhost:6666/postgres?sslmode=disable"
-  max_connections: 10           # Максимальное количество подключений
+  max_connections: 10
 
 server:
   port: "8888"
   base_path: "/api/v1"
-  timeout: 30                    # Таймаут для запросов (в секундах)
-  max_clients: 100               # Максимальное количество одновременных клиентов
+  timeout: 30
+  max_clients: 100
 
 logging:
-  level: "debug"                 # Уровни: "debug", "info", "warn", "error"
-  format: "text"                 # Форматы: "text" или "json"
-  output_file: "logs/app.log"    # Файл для логирования (оставить пустым для stdout)
+  level: "debug"
+  format: "text"
+  output_file: "../admin/log/log.log"
+
 
 security:
-  jwt_secret: "supersecretkey"   # Секрет для JWT-токенов
+  jwt_secret: "supersecretkey"

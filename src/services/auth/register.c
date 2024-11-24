@@ -26,7 +26,6 @@ enum MHD_Result handle_register(void *cls,
 
     char *data = (char *)*con_cls;
 
-    // Читаем данные POST-запроса
     if (*upload_data_size > 0) {
         data = realloc(data, strlen(data) + *upload_data_size + 1);
         strncat(data, upload_data, *upload_data_size);
@@ -35,7 +34,6 @@ enum MHD_Result handle_register(void *cls,
         return MHD_YES;
     }
 
-    // Парсим JSON
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
     *con_cls = NULL;
@@ -69,7 +67,6 @@ enum MHD_Result handle_register(void *cls,
         return ret;
     }
 
-    //hash password
     char *passhash = hash_password(password);
     if (!passhash) {
         const char *error_msg = "{\"status\":\"error\",\"message\":\"Password hashing failed\"}";
@@ -91,6 +88,9 @@ enum MHD_Result handle_register(void *cls,
             strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
         MHD_destroy_response(response);
+
+        logging(INFO, "Success create user as %s", username);
+
         return ret;
     } else {
         const char *error_msg = "{\"status\":\"error\",\"message\":\"User creation failed\"}";
@@ -98,6 +98,9 @@ enum MHD_Result handle_register(void *cls,
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
+
+        logging(INFO, "Failed to create user as %s", username);
+
         return ret;
     }
 }
