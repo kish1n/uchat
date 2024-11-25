@@ -2,13 +2,12 @@
 #include "../../db/core/core.h"
 #include "../../pkg/crypto/crypto.h"
 #include "../../pkg/jwt_utils/jwt_utils.h"
+#include "auth_handlers.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "auth_handlers.h"
-
-enum MHD_Result handle_login(HttpContext *context) {
+int handle_login(HttpContext *context) {
     if (!context) {
         logging(ERROR, "Invalid context passed to handle_login");
         return MHD_NO;

@@ -7,7 +7,7 @@
 
 #include "auth_handlers.h"
 
-enum MHD_Result handle_register(HttpContext *context) {
+int handle_register(HttpContext *context) {
     if (!context) {
         logging(ERROR, "Invalid context passed to handle_register");
         return MHD_NO;
