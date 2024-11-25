@@ -46,6 +46,12 @@ enum MHD_Result handle_request(void *cls,
     if (strcmp(url, "/login") == 0 && strcmp(method, "POST") == 0) {
         return handle_login(&context);
     }
+    if (strcmp(url, "/logout") == 0 && strcmp(method, "GET") == 0) {
+        return handle_logout(&context);
+    }
+    if (strcmp(url, "/update_username") == 0 && strcmp(method, "POST") == 0) {
+        return handle_update_username(&context);
+    }
 
     const char *error_msg = "Endpoint not found";
     struct MHD_Response *response = MHD_create_response_from_buffer(
