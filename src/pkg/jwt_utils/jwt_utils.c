@@ -4,7 +4,6 @@
 #include <string.h>
 #include <time.h>
 
-// Генерация JWT токена
 char* generate_jwt(const char *user_id, const char *secret_key, int expiration_time) {
     jwt_t *jwt = NULL;
     time_t now = time(NULL);
@@ -39,18 +38,15 @@ char* generate_jwt(const char *user_id, const char *secret_key, int expiration_t
     return token;
 }
 
-// Проверка JWT токена
 int verify_jwt(const char *token, const char *secret_key, char **decoded_user_id) {
     jwt_t *jwt = NULL;
     int ret = 0;
 
-    // Декодируем токен
     if (jwt_decode(&jwt, token, (unsigned char *)secret_key, strlen(secret_key)) != 0) {
         fprintf(stderr, "Failed to decode JWT token\n");
-        return -1; // Неверный токен
+        return -1;
     }
 
-    // Извлекаем user_id из claim "sub"
     const char *user_id = jwt_get_grant(jwt, "sub");
     if (user_id) {
         *decoded_user_id = strdup(user_id);

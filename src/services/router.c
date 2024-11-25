@@ -1,11 +1,14 @@
 #include "service.h"
 #include <stdlib.h>
 #include <json-c/json.h>
-#include "../services/service.h"       // Ваш заголовочный файл для структуры Server
 #include "../db/core/core.h"
-#include "auth/auth_handlers.h"
+#include "../pkg/httputils/httputils.h"
 
-enum MHD_Result handle_request(void *cls,
+#include "auth/auth_handlers.h"
+#include "messages/messages.h"
+#include "chats/chats.h"
+
+enum MHD_Result router(void *cls,
                                struct MHD_Connection *connection,
                                const char *url,
                                const char *method,
@@ -40,11 +43,27 @@ enum MHD_Result handle_request(void *cls,
         .db_conn = db_conn
     };
 
-    if (strcmp(url, "/register") == 0 && strcmp(method, "POST") == 0) {
-        return handle_register(&context);
-    }
-    if (strcmp(url, "/login") == 0 && strcmp(method, "POST") == 0) {
-        return handle_login(&context);
+    if (starts_with(url, "/auth/")) {
+        const char *sub_url = url + strlen("/auth");
+
+        if (strcmp(sub_url, "/register") == 0 && strcmp(method, "POST") == 0) {
+            return handle_register(&context);
+        }
+        if (strcmp(sub_url, "/login") == 0 && strcmp(method, "POST") == 0) {
+            return handle_login(&context);
+        }
+    } else if (starts_with(url, "/messages/")) {
+        const char *sub_url = url + strlen("/messages");
+
+        if (strcmp(sub_url, "/send") == 0 && strcmp(method, "POST") == 0) {
+            return handle_send_message(&context);
+        }
+    } else if (starts_with(url, "/chats/")) {
+        const char *sub_url = url + strlen("/chats");
+
+        if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
+            return handle_create_chat(&context);
+        }
     }
 
     const char *error_msg = "Endpoint not found";

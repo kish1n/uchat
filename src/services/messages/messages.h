@@ -5,6 +5,6 @@
 #include <libpq-fe.h>
 #include "../service.h"
 
-// int handle_send_message(HttpContext *context);
+int handle_send_message(HttpContext *context);
 
 #endif

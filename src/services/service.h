@@ -40,7 +40,7 @@ void server_stop(Server *server);
 void server_destroy(Server *server);
 
 void free_request_data(void *con_cls);
-enum MHD_Result handle_request(void *cls,
+enum MHD_Result router(void *cls,
     struct MHD_Connection *connection,
     const char *url,
     const char *method,

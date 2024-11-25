@@ -27,7 +27,7 @@ add_executable(uchat_auth
         src/pkg/crypto/crypto.c
 
         src/services/service.c
-        src/services/handle_request.c
+        src/services/router.c
         src/services/free_request.c
 
         src/services/auth/register.c
@@ -54,6 +54,9 @@ add_executable(uchat_auth
         src/db/core/messages/delete_message.c
         src/db/core/messages/create_message.c
         src/services/messages/handle_send_message.c
+        src/db/core/chats/chat_exists.c
+        src/pkg/httputils/start_with.c
+        src/services/chats/create_chats.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

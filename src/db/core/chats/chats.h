@@ -14,6 +14,6 @@ int create_chat(PGconn *conn, const char *chat_name, int is_group);
 int update_chat_name(PGconn *conn, int chat_id, const char *new_name);
 int delete_chat(PGconn *conn, int chat_id);
 int get_chat_by_id(PGconn *conn, int chat_id, Chat *chat);
-
+int chat_exists(PGconn *conn, int chat_id);
 
 #endif // CHATS_H

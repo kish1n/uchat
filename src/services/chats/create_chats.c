@@ -1,16 +1,17 @@
-#include "../../db/core/messages/messages.h"
+#include "chats.h"
 #include "../../db/core/chats/chats.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../service.h"
 
-int handle_send_message(HttpContext *context) {
+int handle_create_chat(HttpContext *context) {
+    // Validate context
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_send_message");
+        logging(ERROR, "Invalid context passed to handle_create_chat");
         return MHD_NO;
     }
 
+    // Allocate memory for incoming data if not already allocated
     if (*context->con_cls == NULL) {
         char *buffer = calloc(1, sizeof(char));
         *context->con_cls = buffer;
@@ -19,6 +20,7 @@ int handle_send_message(HttpContext *context) {
 
     char *data = (char *)*context->con_cls;
 
+    // Accumulate incoming data
     if (*context->upload_data_size > 0) {
         data = realloc(data, strlen(data) + *context->upload_data_size + 1);
         strncat(data, context->upload_data, *context->upload_data_size);
@@ -27,6 +29,7 @@ int handle_send_message(HttpContext *context) {
         return MHD_YES;
     }
 
+    // Parse the incoming JSON data
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
     *context->con_cls = NULL;
@@ -40,22 +43,22 @@ int handle_send_message(HttpContext *context) {
         return ret;
     }
 
-    struct json_object *chat_id_obj, *sender_id_obj, *content_obj;
-    int chat_id = -1;
-    int sender_id = -1;
-    const char *content = NULL;
+    // Extract required fields from JSON
+    struct json_object *name_obj, *is_group_obj;
+    const char *name = NULL;
+    int is_group = 0;
 
-    if (json_object_object_get_ex(parsed_json, "chat_id", &chat_id_obj) &&
-        json_object_object_get_ex(parsed_json, "sender_id", &sender_id_obj) &&
-        json_object_object_get_ex(parsed_json, "content", &content_obj)) {
-        chat_id = json_object_get_int(chat_id_obj);
-        sender_id = json_object_get_int(sender_id_obj);
-        content = json_object_get_string(content_obj);
+    if (json_object_object_get_ex(parsed_json, "name", &name_obj)) {
+        name = json_object_get_string(name_obj);
+    }
+
+    if (json_object_object_get_ex(parsed_json, "is_group", &is_group_obj)) {
+        is_group = json_object_get_int(is_group_obj);
     }
 
     // Validate required fields
-    if (chat_id <= 0 || sender_id <= 0 || !content || strlen(content) == 0) {
-        const char *error_msg = "Missing or invalid fields in request";
+    if (!name || strlen(name) == 0) {
+        const char *error_msg = "Missing or invalid 'name' field";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -64,19 +67,8 @@ int handle_send_message(HttpContext *context) {
         return ret;
     }
 
-    // Check if chat exists
-    if (!chat_exists(context->db_conn, chat_id)) {
-        const char *error_msg = "Chat does not exist";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
-    }
-
-    // Save message to database
-    int result = create_message(context->db_conn, chat_id, sender_id, content);
+    // Save chat to database
+    int result = create_chat(context->db_conn, name, is_group);
 
     json_object_put(parsed_json);
 
@@ -87,16 +79,16 @@ int handle_send_message(HttpContext *context) {
         int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
         MHD_destroy_response(response);
 
-        logging(INFO, "Message sent successfully by user %d in chat %d", sender_id, chat_id);
+        logging(INFO, "Chat '%s' created successfully", name);
         return ret;
     } else {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to send message\"}";
+        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to create chat\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
 
-        logging(ERROR, "Failed to send message by user %d in chat %d", sender_id, chat_id);
+        logging(ERROR, "Failed to create chat '%s'", name);
         return ret;
     }
 }
