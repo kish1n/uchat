@@ -5,7 +5,7 @@
 #include <libpq-fe.h>
 #include "../service.h"
 
-enum MHD_Result handle_register(HttpContext *context);
-enum MHD_Result handle_login(HttpContext *context);
+int handle_register(HttpContext *context);
+int handle_login(HttpContext *context);
 
 #endif // AUTH_HANDLERS_H
