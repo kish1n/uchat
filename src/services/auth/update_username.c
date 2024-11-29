@@ -48,7 +48,7 @@ int handle_update_username(HttpContext *context) {
 
     if (!parsed_json) {
         logging(ERROR, "Invalid JSON format in request");
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Invalid JSON format\"}";
+        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -70,7 +70,7 @@ int handle_update_username(HttpContext *context) {
 
     if (!new_username || strlen(new_username) == 0 || !password) {
         logging(ERROR, "Missing or empty new_username or password in request");
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Missing or invalid fields\"}";
+        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -84,7 +84,7 @@ int handle_update_username(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, "your_secret_key", &user_id) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Unauthorized\"}";
+        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
@@ -97,7 +97,7 @@ int handle_update_username(HttpContext *context) {
 
     if (!check_user_credentials(context->db_conn, user_id, password)) {
         logging(ERROR, "Invalid password for user ID: %s", user_id);
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Invalid password\"}";
+        const char *error_msg = create_error_response("Invalid password", STATUS_FORBIDDEN);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
@@ -111,7 +111,7 @@ int handle_update_username(HttpContext *context) {
 
     if (get_user_by_username(context->db_conn, new_username)) {
         logging(ERROR, "Username already taken: %s", new_username);
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Username already taken\"}";
+        const char *error_msg = create_error_response("Username already taken", STATUS_CONFLICT);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_CONFLICT, response);
@@ -125,7 +125,7 @@ int handle_update_username(HttpContext *context) {
 
     if (update_user_username(context->db_conn, user_id, new_username) != 0) {
         logging(ERROR, "Failed to update username for user ID: %s", user_id);
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to update username\"}";
+        const char *error_msg = create_error_response("Failed to update username", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
@@ -138,7 +138,7 @@ int handle_update_username(HttpContext *context) {
     char *new_token = generate_jwt(new_username, "your_secret_key", 3600);
     if (!new_token) {
         logging(ERROR, "Failed to generate new JWT for user: %s", new_username);
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to generate token\"}";
+        const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);

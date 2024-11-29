@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <libpq-fe.h>
+#include "../http_response/response.h"
 
 typedef enum {
     DEBUG,

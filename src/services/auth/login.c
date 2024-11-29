@@ -67,7 +67,7 @@ int handle_login(HttpContext *context) {
 
     // Check user credentials (pseudo code for database verification)
     if (!check_user_credentials(context->db_conn, username, password)) {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Invalid username or password\"}";
+        const char *error_msg = create_error_response( "Invalid username or password", STATUS_BAD_REQUEST);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
@@ -79,7 +79,7 @@ int handle_login(HttpContext *context) {
     // Generate JWT token
     char *token = generate_jwt(username, "your_secret_key", 3600); // 1-hour expiration
     if (!token) {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to generate token\"}";
+        const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
