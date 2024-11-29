@@ -6,22 +6,11 @@
 #include <string.h>
 #include <microhttpd.h>
 #include <libpq-fe.h>
+#include "../pkg/config/config.h"
 
 #define MAX_HANDLERS 100
 #define MAX_PATH_LEN 256
 #define PORT 8080
-
-typedef struct {
-    void *cls;
-    struct MHD_Connection *connection;
-    const char *url;
-    const char *method;
-    const char *version;
-    const char *upload_data;
-    size_t *upload_data_size;
-    void **con_cls;
-    PGconn *db_conn;
-} HttpContext;
 
 typedef struct {
     int port;

@@ -54,6 +54,9 @@ add_executable(uchat_auth
         src/db/core/messages/delete_message.c
         src/db/core/messages/create_message.c
         src/services/messages/handle_send_message.c
+        src/services/auth/logout.c
+        src/db/core/users/check_user_credentials.c
+        src/services/auth/update_username.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)
