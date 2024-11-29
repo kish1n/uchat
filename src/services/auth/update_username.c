@@ -14,7 +14,6 @@ int handle_update_username(HttpContext *context) {
         return MHD_NO;
     }
 
-    // Инициализация для загрузки данных
     if (*context->con_cls == NULL) {
         char *buffer = calloc(1, sizeof(char));
         if (!buffer) {
@@ -22,12 +21,11 @@ int handle_update_username(HttpContext *context) {
             return MHD_NO;
         }
         *context->con_cls = buffer;
-        return MHD_YES; // Продолжаем приём данных
+        return MHD_YES;
     }
 
     char *data = (char *)*context->con_cls;
 
-    // Накопление входящих данных
     if (*context->upload_data_size > 0) {
         size_t new_size = strlen(data) + *context->upload_data_size + 1;
         char *temp = realloc(data, new_size);
@@ -41,10 +39,9 @@ int handle_update_username(HttpContext *context) {
         strncat(data, context->upload_data, *context->upload_data_size);
         *context->upload_data_size = 0;
         *context->con_cls = data;
-        return MHD_YES; // Продолжаем приём данных
+        return MHD_YES;
     }
 
-    // Разбор JSON
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
     *context->con_cls = NULL;
@@ -59,7 +56,6 @@ int handle_update_username(HttpContext *context) {
         return ret;
     }
 
-    // Извлечение полей из JSON
     struct json_object *new_username_obj, *password_obj;
     const char *new_username = NULL;
     const char *password = NULL;
@@ -84,7 +80,6 @@ int handle_update_username(HttpContext *context) {
     }
     logging(DEBUG, "New username: %s, Password: %s", new_username, password);
 
-    // Проверка JWT
     char *user_id = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, "your_secret_key", &user_id) != 1) {
@@ -100,7 +95,6 @@ int handle_update_username(HttpContext *context) {
 
     logging(DEBUG, "User ID: %s", user_id);
 
-    // Проверка пароля пользователя
     if (!check_user_credentials(context->db_conn, user_id, password)) {
         logging(ERROR, "Invalid password for user ID: %s", user_id);
         const char *error_msg = "{\"status\":\"error\",\"message\":\"Invalid password\"}";
@@ -129,7 +123,6 @@ int handle_update_username(HttpContext *context) {
 
     logging(DEBUG, "Username available: %s", new_username);
 
-    // Обновление имени пользователя в базе данных
     if (update_user_username(context->db_conn, user_id, new_username) != 0) {
         logging(ERROR, "Failed to update username for user ID: %s", user_id);
         const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to update username\"}";
@@ -142,7 +135,6 @@ int handle_update_username(HttpContext *context) {
         return ret;
     }
 
-    // Генерация нового JWT
     char *new_token = generate_jwt(new_username, "your_secret_key", 3600);
     if (!new_token) {
         logging(ERROR, "Failed to generate new JWT for user: %s", new_username);
@@ -156,7 +148,6 @@ int handle_update_username(HttpContext *context) {
         return ret;
     }
 
-    // Успешное обновление с JWT
     struct json_object *response_json = json_object_new_object();
     json_object_object_add(response_json, "status", json_object_new_string("success"));
     json_object_object_add(response_json, "token", json_object_new_string(new_token));
