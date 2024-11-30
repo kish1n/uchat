@@ -15,7 +15,7 @@ enum MHD_Result handle_request(void *cls,
                                void **con_cls) {
 
     Config config;
-    if (load_config("../config.yaml", &config) != 0) {
+    if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
 
         return EXIT_FAILURE;
