@@ -17,3 +17,4 @@ void disconnect_db(PGconn *conn) {
         PQfinish(conn);
     }
 }
+

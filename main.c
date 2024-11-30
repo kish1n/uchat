@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libpq-fe.h>
-#include "src/services/service.h"
-#include "src/db/core/core.h"
-#include "src/pkg/config/config.h"
+#include "src/server/services/service.h"
+#include "src/server/db/core/core.h"
+#include "src/server/pkg/config/config.h"
 
 #define PORT 8080
 
 int main() {
     Config config;
-    if (load_config("../config.yaml", &config) != 0) {
+    if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
         return EXIT_FAILURE;
     }
