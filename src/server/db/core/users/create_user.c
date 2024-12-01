@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int create_user(PGconn *conn, const char *username, const char *passhash) {
-    const char *query = "INSERT INTO users (uuid, username, passhash, created_at) VALUES (gen_random_uuid(), $1, $2, CURRENT_TIMESTAMP);";
+    const char *query = "INSERT INTO users (id, username, passhash, created_at) VALUES (gen_random_uuid(), $1, $2, CURRENT_TIMESTAMP);";
     const char *paramValues[2] = {username, passhash};
 
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
