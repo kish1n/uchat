@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int delete_user(PGconn *conn, const char *uuid) {
-    const char *query = "DELETE FROM users WHERE uuid = $1;";
+    const char *query = "DELETE FROM users WHERE id = $1;";
     const char *paramValues[1] = {uuid};
 
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);

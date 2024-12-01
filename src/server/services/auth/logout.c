@@ -5,6 +5,7 @@
 #include "../../pkg/jwt_utils/jwt_utils.h"
 #include "../../pkg/config/config.h"
 
+// handle_logout after this endpoint frontend must delete token
 int handle_logout(HttpContext *context) {
     if (!context) {
         logging(ERROR, "Invalid context in handle_logout");
