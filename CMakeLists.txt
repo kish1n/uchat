@@ -11,52 +11,53 @@ find_package(OpenSSL REQUIRED)
 include_directories(${YAML_INCLUDE_DIRS} /usr/include/postgresql)
 link_directories(/usr/lib/x86_64-linux-gnu)
 
-file(GLOB AUTH_HANDLERS_SRC "src/services/auth/handlers/*.c")
-
 add_executable(uchat_auth
         main.c
 
-        src/db/core/db.c
-        src/db/core/migrations.c
-        src/db/core/core.h
-        src/db/core/users/delete_user.c
+        src/server/db/core/db.c
+        src/server/db/core/migrations.c
+        src/server/db/core/core.h
+        src/server/db/core/users/delete_user.c
 
-        src/pkg/config/config.c
-        src/pkg/config/logger.c
-        src/pkg/json_parser/json_parser.c
-        src/pkg/crypto/crypto.c
+        src/server/pkg/config/config.c
+        src/server/pkg/config/logger.c
+        src/server/pkg/json_parser/json_parser.c
+        src/server/pkg/crypto/crypto.c
 
-        src/services/service.c
-        src/services/router.c
-        src/services/free_request.c
+        src/server/services/service.c
+        src/server/services/router.c
+        src/server/services/free_request.c
 
-        src/services/auth/register.c
-        src/services/auth/login.c
-        src/pkg/jwt_utils/jwt_utils.c
-        src/db/core/users/get_user_by_uuid.c
-        src/db/core/users/get_user_by_username.c
-        src/db/core/users/free_user.c
-        src/pkg/config/logger.c
-        src/pkg/config/logger.c
-        src/db/core/users/update_user_username.c
-        src/db/core/users/update_user_password.c
-        src/db/core/users/create_user.c
-        src/db/core/chats/create_chat.c
-        src/db/core/chats/delete_chat.c
-        src/db/core/chats/get_chat_by_id.c
-        src/db/core/chats/update_chat_name.c
-        src/db/core/chat_members/add_chat_member.c
-        src/db/core/chat_members/get_chat_members.c
-        src/db/core/chat_members/is_user_in_chat.c
-        src/db/core/chat_members/remove_chat_member.c
-        src/db/core/messages/get_messages_by_chat.c
-        src/db/core/messages/get_message_by_id.c
-        src/db/core/messages/delete_message.c
-        src/db/core/messages/create_message.c
-        src/services/messages/handle_send_message.c
-        src/db/core/chats/chat_exists.c
-        src/pkg/httputils/start_with.c
-        src/services/chats/create_chats.c
+        src/server/services/auth/register.c
+        src/server/services/auth/login.c
+        src/server/pkg/jwt_utils/jwt_utils.c
+        src/server/db/core/users/get_user_by_uuid.c
+        src/server/db/core/users/get_user_by_username.c
+        src/server/db/core/users/free_user.c
+        src/server/pkg/config/logger.c
+        src/server/pkg/config/logger.c
+        src/server/db/core/users/update_user_username.c
+        src/server/db/core/users/update_user_password.c
+        src/server/db/core/users/create_user.c
+        src/server/db/core/chats/create_chat.c
+        src/server/db/core/chats/delete_chat.c
+        src/server/db/core/chats/get_chat_by_id.c
+        src/server/db/core/chats/update_chat_name.c
+        src/server/db/core/chat_members/add_chat_member.c
+        src/server/db/core/chat_members/get_chat_members.c
+        src/server/db/core/chat_members/is_user_in_chat.c
+        src/server/db/core/chat_members/remove_chat_member.c
+        src/server/db/core/messages/get_messages_by_chat.c
+        src/server/db/core/messages/get_message_by_id.c
+        src/server/db/core/messages/delete_message.c
+        src/server/db/core/messages/create_message.c
+        src/server/db/core/chats/chat_exists.c
+        src/server/pkg/httputils/start_with.c
+        src/server/services/chats/create_chats.c
+        src/server/services/messages/edit_message.c
+        src/server/services/messages/edit_message.c
+        src/server/services/messages/send_message.c
+        src/server/services/messages/edit_message.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

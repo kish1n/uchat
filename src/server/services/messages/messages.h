@@ -6,5 +6,6 @@
 #include "../service.h"
 
 int handle_send_message(HttpContext *context);
+int handle_edit_message(HttpContext *context);
 
 #endif
