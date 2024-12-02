@@ -1,3 +1,5 @@
 cmake-build-debug/
 .idea
 admin/log/log.log
+CMakeLists.txt
+build/

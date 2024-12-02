@@ -4,7 +4,7 @@
 #include <libpq-fe.h>
 
 typedef struct {
-    char *uuid;
+    char *id;
     char *username;
     char *passhash;
     char *created_at;
@@ -18,5 +18,6 @@ int create_user(PGconn *conn, const char *username, const char *passhash);
 int update_user_password(PGconn *conn, const char *uuid, const char *new_passhash);
 int update_user_username(PGconn *conn, const char *uuid, const char *new_username);
 int delete_user(PGconn *conn, const char *uuid);
+int check_user_credentials(PGconn *conn, const char *username, const char *password);
 
 #endif // USER_H

@@ -4,7 +4,7 @@
 
 void free_user(User *user) {
     if (user) {
-        free(user->uuid);
+        free(user->id);
         free(user->username);
         free(user->passhash);
         free(user->created_at);

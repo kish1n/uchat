@@ -80,7 +80,7 @@ int handle_register(HttpContext *context) {
     json_object_put(parsed_json);
 
     if (result == 0) {
-        const char *success_msg = "{\"status\":\"success\"}";
+        const char *success_msg = create_response("User created", STATUS_CREATED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
@@ -89,7 +89,7 @@ int handle_register(HttpContext *context) {
         logging(INFO, "Successfully created user: %s", username);
         return ret;
     } else {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"User creation failed\"}";
+        const char *error_msg = create_error_response("Failed to create user", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);

@@ -1,12 +1,9 @@
 #include "service.h"
 #include <stdlib.h>
 #include <json-c/json.h>
+#include "../services/service.h"       // Ваш заголовочный файл для структуры Server
 #include "../db/core/core.h"
-#include "../pkg/httputils/httputils.h"
-
 #include "auth/auth_handlers.h"
-#include "messages/messages.h"
-#include "chats/chats.h"
 
 enum MHD_Result router(void *cls,
                                struct MHD_Connection *connection,
@@ -18,7 +15,7 @@ enum MHD_Result router(void *cls,
                                void **con_cls) {
 
     Config config;
-    if (load_config("../config.yaml", &config) != 0) {
+    if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
 
         return EXIT_FAILURE;
@@ -64,6 +61,12 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
             return handle_create_chat(&context);
         }
+    }
+    if (strcmp(url, "/logout") == 0 && strcmp(method, "GET") == 0) {
+        return handle_logout(&context);
+    }
+    if (strcmp(url, "/update_username") == 0 && strcmp(method, "POST") == 0) {
+        return handle_update_username(&context);
     }
 
     const char *error_msg = "Endpoint not found";

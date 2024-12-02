@@ -11,7 +11,7 @@ server:
 logging:
   level: "debug"
   format: "text"
-  output_file: "../admin/log/log.log"
+  output_file: "admin/log/log.log"
 
 
 security:

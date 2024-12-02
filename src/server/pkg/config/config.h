@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <libpq-fe.h>
+#include "../http_response/response.h"
 
 typedef enum {
     DEBUG,
@@ -37,6 +38,18 @@ typedef struct {
     LoggingConfig logging;
     SecurityConfig security;
 } Config;
+
+typedef struct {
+    void *cls;
+    struct MHD_Connection *connection;
+    const char *url;
+    const char *method;
+    const char *version;
+    const char *upload_data;
+    size_t *upload_data_size;
+    void **con_cls;
+    PGconn *db_conn;
+} HttpContext;
 
 int load_config(const char *filename, Config *config);
 
