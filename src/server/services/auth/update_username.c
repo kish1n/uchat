@@ -9,6 +9,9 @@
 #include "auth_handlers.h"
 
 int handle_update_username(HttpContext *context) {
+    Config cfg;
+    load_config("config.yaml", &cfg);
+
     if (!context) {
         logging(ERROR, "Invalid context passed to handle_update_username");
         return MHD_NO;
@@ -82,7 +85,7 @@ int handle_update_username(HttpContext *context) {
 
     char *user_id = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
-    if (!jwt || verify_jwt(jwt, "your_secret_key", &user_id) != 1) {
+    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &user_id) != 1) {
         logging(ERROR, "JWT verification failed");
         const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -135,7 +138,7 @@ int handle_update_username(HttpContext *context) {
         return ret;
     }
 
-    char *new_token = generate_jwt(new_username, "your_secret_key", 3600);
+    char *new_token = generate_jwt(new_username, cfg.security.jwt_secret, 3600);
     if (!new_token) {
         logging(ERROR, "Failed to generate new JWT for user: %s", new_username);
         const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);

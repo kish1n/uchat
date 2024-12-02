@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 int update_user_password(PGconn *conn, const char *uuid, const char *new_passhash) {
-    const char *query = "UPDATE users SET passhash = $1 WHERE uuid = $2;";
+    const char *query = "UPDATE users SET passhash = $1 WHERE id = $2;";
     const char *paramValues[2] = {new_passhash, uuid};
 
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);

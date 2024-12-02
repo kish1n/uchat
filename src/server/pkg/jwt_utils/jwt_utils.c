@@ -49,6 +49,8 @@ int verify_jwt(const char *token, const char *secret_key, char **decoded_user_id
 }
 
 int validate_auth_token(HttpContext *context, char **user_id) {
+    Config cfg;
+    load_config("config.yaml", &cfg);
     // Extract token from Authorization header
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt) {
@@ -57,7 +59,7 @@ int validate_auth_token(HttpContext *context, char **user_id) {
     }
 
     // Verify the token
-    if (verify_jwt(jwt, "your_secret_key", user_id) != 1) {
+    if (verify_jwt(jwt, cfg.security.jwt_secret, user_id) != 1) {
         logging(ERROR, "Invalid or expired JWT");
         return MHD_HTTP_UNAUTHORIZED; // Return HTTP status 401
     }

@@ -7,6 +7,9 @@
 #include <string.h>
 
 int handle_login(HttpContext *context) {
+    Config cfg;
+    load_config("config.yaml", &cfg);
+
     if (!context) {
         logging(ERROR, "Invalid context passed to handle_authenticate");
         return MHD_NO;
@@ -77,7 +80,7 @@ int handle_login(HttpContext *context) {
     }
 
     // Generate JWT token
-    char *token = generate_jwt(username, "your_secret_key", 3600); // 1-hour expiration
+    char *token = generate_jwt(username, cfg.security.jwt_secret, 3600); // 1-hour expiration
     if (!token) {
         const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(

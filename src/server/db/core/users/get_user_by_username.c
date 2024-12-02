@@ -6,7 +6,7 @@
 #include "../../../pkg/config/config.h"
 
 User* get_user_by_username(PGconn *conn, const char *username) {
-    const char *query = "SELECT uuid, username, passhash, created_at FROM users WHERE username = $1;";
+    const char *query = "SELECT id, username, passhash, created_at FROM users WHERE username = $1;";
     const char *paramValues[1] = {username};
 
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
@@ -29,7 +29,7 @@ User* get_user_by_username(PGconn *conn, const char *username) {
         return NULL;
     }
 
-    user->uuid = strdup(PQgetvalue(res, 0, 0));
+    user->id = strdup(PQgetvalue(res, 0, 0));
     user->username = strdup(PQgetvalue(res, 0, 1));
     user->passhash = strdup(PQgetvalue(res, 0, 2));
     user->created_at = strdup(PQgetvalue(res, 0, 3));

@@ -4,7 +4,7 @@
 #include <libpq-fe.h>
 
 typedef struct {
-    char *uuid;
+    char *id;
     char *username;
     char *passhash;
     char *created_at;
