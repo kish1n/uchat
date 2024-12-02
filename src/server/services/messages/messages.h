@@ -7,5 +7,5 @@
 
 int handle_send_message(HttpContext *context);
 int handle_edit_message(HttpContext *context);
-
+int handle_delete_message(HttpContext *context) 
 #endif
