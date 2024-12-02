@@ -65,7 +65,7 @@ enum MHD_Result router(void *cls,
             return handle_send_message(&context);
         }
         if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "POST") == 0) {
-            return handle_edit_message(&context);
+            return handle_delete_message(&context);
         }
         if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "POST") == 0) {
             return handle_edit_message(&context);
@@ -78,7 +78,7 @@ enum MHD_Result router(void *cls,
             return handle_create_chat(&context);
         }
         if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "POST") == 0) {
-            return handle_edit_message(&context);
+            return handle_delete_chat(&context);
         }
 
     }
