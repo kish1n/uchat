@@ -1,8 +1,8 @@
-#include "chats.h"
-#include "../../db/core/chats/chats.h"
+#include "messenger.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../../db/core/chats/chats.h"
 
 int handle_delete_chat(HttpContext *context) {
     // Validate context

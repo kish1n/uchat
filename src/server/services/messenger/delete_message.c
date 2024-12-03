@@ -1,17 +1,18 @@
-#include "chats.h"
-#include "../../db/core/chats/chats.h"
+#include "messenger.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../service.h"
+#include "../../db/core/messages/messages.h"
+#include "../../db/core/chats/chats.h"
 
-int handle_create_chat(HttpContext *context) {
-    // Validate context
+
+int handle_delete_message(HttpContext *context) {
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_create_chat");
+        logging(ERROR, "Invalid context passed to handle_delete_message");
         return MHD_NO;
     }
 
-    // Allocate memory for incoming data if not already allocated
     if (*context->con_cls == NULL) {
         char *buffer = calloc(1, sizeof(char));
         *context->con_cls = buffer;
@@ -20,7 +21,6 @@ int handle_create_chat(HttpContext *context) {
 
     char *data = (char *)*context->con_cls;
 
-    // Accumulate incoming data
     if (*context->upload_data_size > 0) {
         data = realloc(data, strlen(data) + *context->upload_data_size + 1);
         strncat(data, context->upload_data, *context->upload_data_size);
@@ -29,7 +29,6 @@ int handle_create_chat(HttpContext *context) {
         return MHD_YES;
     }
 
-    // Parse the incoming JSON data
     struct json_object *parsed_json = json_tokener_parse(data);
     free(data);
     *context->con_cls = NULL;
@@ -43,22 +42,16 @@ int handle_create_chat(HttpContext *context) {
         return ret;
     }
 
-    // Extract required fields from JSON
-    struct json_object *name_obj, *is_group_obj;
-    const char *name = NULL;
-    int is_group = 0;
+    struct json_object *message_id_obj;
+    int message_id = -1;
 
-    if (json_object_object_get_ex(parsed_json, "name", &name_obj)) {
-        name = json_object_get_string(name_obj);
-    }
-
-    if (json_object_object_get_ex(parsed_json, "is_group", &is_group_obj)) {
-        is_group = json_object_get_int(is_group_obj);
+    if (json_object_object_get_ex(parsed_json, "id", &message_id_obj)) {
+        message_id = json_object_get_int(message_id_obj);
     }
 
     // Validate required fields
-    if (!name || strlen(name) == 0) {
-        const char *error_msg = "Missing or invalid 'name' field";
+    if (message_id <= 0) {
+        const char *error_msg = "Missing or invalid 'id' in request";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -67,8 +60,19 @@ int handle_create_chat(HttpContext *context) {
         return ret;
     }
 
-    // Save chat to database
-    int result = create_chat(context->db_conn, name, is_group);
+    // Check if the message exists
+    if (!message_exists(context->db_conn, message_id)) {
+        const char *error_msg = "Message does not exist";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    }
+
+    // Delete the message from the database
+    int result = delete_message(context->db_conn, message_id);
 
     json_object_put(parsed_json);
 
@@ -79,16 +83,16 @@ int handle_create_chat(HttpContext *context) {
         int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
         MHD_destroy_response(response);
 
-        logging(INFO, "Chat '%s' created successfully", name);
+        logging(INFO, "Message %d deleted successfully", message_id);
         return ret;
     } else {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to create chat\"}";
+        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to delete message\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
 
-        logging(ERROR, "Failed to create chat '%s'", name);
+        logging(ERROR, "Failed to delete message %d", message_id);
         return ret;
     }
 }

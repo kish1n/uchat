@@ -53,7 +53,7 @@ add_executable(uchat_auth
         src/server/db/core/messages/create_message.c
         src/server/db/core/chats/chat_exists.c
         src/server/pkg/httputils/start_with.c
-        src/server/services/chats/create_chats.c
+        src/server/services/messenger/create_chat.c
         src/server/services/messages/edit_message.c
         src/server/services/messages/edit_message.c
         src/server/services/messages/send_message.c

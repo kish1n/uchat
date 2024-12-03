@@ -1,10 +1,11 @@
-#include "../../pkg/config/config.h"
-#include "../../db/core/messages/messages.h"
-#include "../../db/core/chats/chats.h"
+#include "messenger.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../service.h"
+#include "../../pkg/config/config.h"
+#include "../../db/core/messages/messages.h"
+#include "../../db/core/chats/chats.h"
 
 int handle_edit_message(HttpContext *context) {
     if (!context) {

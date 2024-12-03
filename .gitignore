@@ -1,5 +1,16 @@
+# Игнорировать каталоги сборки
 cmake-build-debug/
-.idea
-admin/log/log.log
-CMakeLists.txt
 build/
+
+# Игнорировать файлы конфигурации среды разработки
+.idea
+.vscode
+
+# Игнорировать файлы журналов
+admin/log/log.log
+
+# Игнорировать скомпилированные файлы объектных файлов
+*.o
+
+# Игнорировать главный файл CMakeLists.txt, если он не нужен
+CMakeLists.txt
