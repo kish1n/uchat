@@ -9,14 +9,13 @@
 #include "auth/auth_handlers.h"
 
 enum MHD_Result router(void *cls,
-                               struct MHD_Connection *connection,
-                               const char *url,
-                               const char *method,
-                               const char *version,
-                               const char *upload_data,
-                               size_t *upload_data_size,
-                               void **con_cls) {
-
+                       struct MHD_Connection *connection,
+                       const char *url,
+                       const char *method,
+                       const char *version,
+                       const char *upload_data,
+                       size_t *upload_data_size,
+                       void **con_cls) {
     Config config;
     if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
