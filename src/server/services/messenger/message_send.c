@@ -18,7 +18,7 @@ int handle_send_message(HttpContext *context) {
         return MHD_YES;
     }
 
-    char *data = (char *)*context->con_cls;
+    char *data = (char *) *context->con_cls;
 
     if (*context->upload_data_size > 0) {
         data = realloc(data, strlen(data) + *context->upload_data_size + 1);
@@ -35,7 +35,7 @@ int handle_send_message(HttpContext *context) {
     if (!parsed_json) {
         const char *error_msg = "Invalid JSON";
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+            strlen(error_msg), (void *) error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
         return ret;
@@ -58,7 +58,7 @@ int handle_send_message(HttpContext *context) {
     if (chat_id <= 0 || sender_id <= 0 || !content || strlen(content) == 0) {
         const char *error_msg = "Missing or invalid fields in request";
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+            strlen(error_msg), (void *) error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
@@ -69,7 +69,7 @@ int handle_send_message(HttpContext *context) {
     if (!chat_exists(context->db_conn, chat_id)) {
         const char *error_msg = "Chat does not exist";
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+            strlen(error_msg), (void *) error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
@@ -84,7 +84,7 @@ int handle_send_message(HttpContext *context) {
     if (result == 0) {
         const char *success_msg = "{\"status\":\"success\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
+            strlen(success_msg), (void *) success_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
         MHD_destroy_response(response);
 
@@ -93,7 +93,7 @@ int handle_send_message(HttpContext *context) {
     } else {
         const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to send message\"}";
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+            strlen(error_msg), (void *) error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
 
