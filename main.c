@@ -5,9 +5,26 @@
 #include "src/server/db/core/core.h"
 #include "src/server/pkg/config/config.h"
 
-#define PORT 8080
+//#define PORT 8080
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: ./uchat_server <port>\n");
+        return EXIT_FAILURE;
+    }
+
+    char *endptr = NULL;
+    int port = strtol(argv[1], &endptr, 10);
+    if (*endptr != '\0') {
+        fprintf(stderr, "Error: Port must be an integer\n");
+        return EXIT_FAILURE;
+    }
+
+    if (port <= 0 || port > 65535) {
+        fprintf(stderr, "Error: Port must be an integer between 1 and 65535.\n");
+        return EXIT_FAILURE;
+    }
+
     Config config;
     if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
@@ -26,7 +43,7 @@ int main() {
     }
     logging(INFO, "Database connection established successfully");
 
-    Server *server = server_init(PORT, db_conn);
+    Server *server = server_init(port, db_conn);
     if (!server) {
         logging(ERROR, "Failed to initialize server");
         disconnect_db(db_conn);
@@ -42,7 +59,7 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    logging(INFO, "Server is running on port %d", PORT);
+    logging(INFO, "Server is running on port %d", port);
     logging(INFO, "Press Enter to stop the server...");
 
     getchar();

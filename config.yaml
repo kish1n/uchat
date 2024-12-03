@@ -1,5 +1,5 @@
 database:
-  url: "postgresql://postgres:postgres@localhost:6666/postgres?sslmode=disable"
+  url: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
   max_connections: 10
 
 server:
