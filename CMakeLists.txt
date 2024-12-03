@@ -54,10 +54,13 @@ add_executable(uchat_auth
         src/server/db/core/chats/chat_exists.c
         src/server/pkg/httputils/start_with.c
         src/server/services/messenger/chat_create.c
-        src/server/services/messages/edit_message.c
-        src/server/services/messages/edit_message.c
-        src/server/services/messages/send_message.c
-        src/server/services/messages/edit_message.c
+        src/server/services/messenger/message_edit.c
+        src/server/services/messenger/message_send.c
+        src/server/services/messenger/message_edit.c
+        src/server/services/messenger/chat_delete.c
+        src/server/services/messenger/chat_delete.c
+        src/server/services/messenger/message_delete.c
+        src/server/services/messenger/message_delete.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)
