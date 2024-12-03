@@ -3,8 +3,7 @@
 #include <json-c/json.h>
 #include "../services/service.h"
 #include "../pkg/httputils/httputils.h"
-#include "../services/messages/messages.h"
-#include "../services/chats/chats.h"
+#include "../services/messenger/messenger.h"
 #include "../db/core/core.h"
 #include "auth/auth_handlers.h"
 
@@ -51,10 +50,10 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/login") == 0 && strcmp(method, "POST") == 0) {
             return handle_login(&context);
         }
-        if (strcmp(url, "/logout") == 0 && strcmp(method, "GET") == 0) {
+        if (strcmp(sub_url, "/logout") == 0 && strcmp(method, "GET") == 0) {
             return handle_logout(&context);
         }
-        if (strcmp(url, "/update_username") == 0 && strcmp(method, "POST") == 0) {
+        if (strcmp(sub_url, "/update_username") == 0 && strcmp(method, "PUT") == 0) {
             return handle_update_username(&context);
         }
     } else if (starts_with(url, "/messages/")) {
@@ -69,21 +68,18 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "POST") == 0) {
             return handle_edit_message(&context);
         }
-
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");
 
-        if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
+        if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
             return handle_create_chat(&context);
         }
-        if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "POST") == 0) {
+        if (strcmp(sub_url, "/delete_group") == 0 && strcmp(method, "POST") == 0) {
             return handle_delete_chat(&context);
         }
-
     }
 
-
-    const char *error_msg = "Endpoint not found";
+    const char *error_msg = create_error_response("Endpoint not found", STATUS_NOT_FOUND);
     struct MHD_Response *response = MHD_create_response_from_buffer(
         strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
     int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);

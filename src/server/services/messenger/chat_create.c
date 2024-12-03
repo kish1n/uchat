@@ -2,11 +2,16 @@
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../../pkg/config/config.h"
+#include "../../pkg/jwt_utils/jwt_utils.h"
 #include "../../db/core/chats/chats.h"
 #include "../../db/core/chat_members/chat_members.h"
 
 
 int handle_create_chat(HttpContext *context) {
+    Config cfg;
+    load_config("config.yaml", &cfg);
+
     if (!context) {
         logging(ERROR, "Invalid context passed to handle_create_chat");
         return MHD_NO;
@@ -68,10 +73,8 @@ int handle_create_chat(HttpContext *context) {
         return ret;
     }
 
-    // Принудительно устанавливаем is_group = 1
     int is_group = 1;
 
-    // Создание чата в базе данных
     int chat_id = create_chat(context->db_conn, name, is_group);
     if (chat_id <= 0) {
         const char *error_msg = "Failed to create chat";
@@ -88,8 +91,9 @@ int handle_create_chat(HttpContext *context) {
     // Извлечение JWT для создателя чата
     char *creator_id = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
-    if (!jwt || verify_jwt(jwt, "your_secret_key", &creator_id) != 1) {
-        const char *error_msg = "Unauthorized";
+    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_id) != 1) {
+        logging(ERROR, "JWT verification failed");
+        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);

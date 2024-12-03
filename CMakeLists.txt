@@ -61,6 +61,11 @@ add_executable(uchat_auth
         src/server/services/messenger/chat_delete.c
         src/server/services/messenger/message_delete.c
         src/server/services/messenger/message_delete.c
+        src/server/services/auth/update_username.c
+        src/server/services/auth/logout.c
+        src/server/db/core/messages/message_exists.c
+        src/server/db/core/messages/edit_message.c
+        src/server/pkg/httputils/process_request_data.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

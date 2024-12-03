@@ -1,6 +1,4 @@
-#ifndef MESSAGES_H
-#define MESSAGES_H
-
+#pragma once
 #include "../../../pkg/config/config.h"
 #include <libpq-fe.h>
 
@@ -19,4 +17,3 @@ int get_messages_by_chat(PGconn *conn, int chat_id, Message **messages, int *mes
 int edit_message(PGconn *conn, int message_id, const char *new_content);
 int message_exists(PGconn *conn, int message_id);
 
-#endif // MESSAGES_H

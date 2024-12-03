@@ -1,15 +1,18 @@
-#include "../../db/core/users/users.h"
-#include "../../db/core/core.h"
-#include "../../pkg/crypto/crypto.h"
+#include "auth_handlers.h"
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "auth_handlers.h"
+#include "../../pkg/httputils/httputils.h"
+#include "../../db/core/users/users.h"
+#include "../../db/core/core.h"
+#include "../../pkg/crypto/crypto.h"
 
 int handle_register(HttpContext *context) {
+    Config cfg;
+    load_config("config.yaml", &cfg);
+
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_register");
+        logging(ERROR, "Invalid context passed to handle_create_chat");
         return MHD_NO;
     }
 
@@ -34,7 +37,7 @@ int handle_register(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        const char *error_msg = "Invalid JSON";
+        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -42,31 +45,34 @@ int handle_register(HttpContext *context) {
         return ret;
     }
 
-    struct json_object *username_obj, *password_obj;
-    const char *username = NULL;
-    const char *password = NULL;
+    logging(DEBUG, "Parsed JSON: %s", json_object_to_json_string(parsed_json));
 
-    if (json_object_object_get_ex(parsed_json, "username", &username_obj) &&
-        json_object_object_get_ex(parsed_json, "password", &password_obj)) {
+    // Extract username and password
+    struct json_object *username_obj, *password_obj;
+    const char *username = NULL, *password = NULL;
+
+    if (json_object_object_get_ex(parsed_json, "username", &username_obj)) {
         username = json_object_get_string(username_obj);
+    }
+    if (json_object_object_get_ex(parsed_json, "password", &password_obj)) {
         password = json_object_get_string(password_obj);
     }
 
     if (!username || !password) {
         const char *error_msg = "Missing username or password";
+        logging(ERROR, "Username or password is missing: username=%s, password=%s",
+                username ? username : "NULL", password ? password : "NULL");
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
-
-        logging(INFO, "Failed to register user: missing username or password");
         return ret;
     }
 
     char *passhash = hash_password(password);
     if (!passhash) {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Password hashing failed\"}";
+        const char *error_msg = create_response("Failed to hash password", STATUS_CONFLICT);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);

@@ -4,51 +4,16 @@
 #include <string.h>
 #include "../service.h"
 #include "../../pkg/config/config.h"
+#include "../../pkg/httputils/httputils.h"
+#include "../../pkg/http_response/response.h"
 #include "../../db/core/messages/messages.h"
 #include "../../db/core/chats/chats.h"
 
 int handle_edit_message(HttpContext *context) {
-    if (!context) {
-        logging(ERROR, "Invalid context passed to handle_edit_message");
-        return MHD_NO;
-    }
+    struct json_object *parsed_json = NULL;
 
-    if (*context->con_cls == NULL) {
-        char *buffer = calloc(1, sizeof(char));
-        if (!buffer) {
-            logging(ERROR, "Failed to allocate memory for con_cls");
-            return MHD_NO;
-        }
-        *context->con_cls = buffer;
-        return MHD_YES;
-    }
-
-    char *data = (char *)*context->con_cls;
-
-    if (*context->upload_data_size > 0) {
-        size_t new_size = strlen(data) + *context->upload_data_size + 1;
-        char *temp = realloc(data, new_size);
-        if (!temp) {
-            logging(ERROR, "Failed to reallocate memory for request data");
-            free(data);
-            *context->con_cls = NULL;
-            return MHD_NO;
-        }
-        data = temp;
-        strncat(data, context->upload_data, *context->upload_data_size);
-        *context->upload_data_size = 0;
-        *context->con_cls = data;
-        return MHD_YES;
-    }
-
-    // Parse the JSON payload
-    struct json_object *parsed_json = json_tokener_parse(data);
-    free(data);
-    *context->con_cls = NULL;
-
-    if (!parsed_json) {
-        logging(ERROR, "Invalid JSON received in edit message request");
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Invalid JSON format\"}";
+    if (process_request_data(context, &parsed_json) != MHD_YES) {
+        const char *error_msg = "Invalid JSON";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
