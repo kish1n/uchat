@@ -6,9 +6,9 @@
 #include "../../pkg/jwt_utils/jwt_utils.h"
 #include "../../db/core/chats/chats.h"
 #include "../../db/core/chat_members/chat_members.h"
+#include "../../db/core/users/users.h"
 
-
-int handle_create_chat(HttpContext *context) {
+int handle_create_private_chat(HttpContext *context) {
     Config cfg;
     load_config("config.yaml", &cfg);
 
@@ -47,48 +47,14 @@ int handle_create_chat(HttpContext *context) {
     }
 
     struct json_object *name_obj, *users_array;
-    const char *name = NULL;
+    const char *with_user = NULL;
 
-    if (json_object_object_get_ex(parsed_json, "name", &name_obj)) {
-        name = json_object_get_string(name_obj);
+    //LOGIC:
+
+    if (json_object_object_get_ex(parsed_json, "with_user", &name_obj)) {
+        with_user = json_object_get_string(name_obj);
     }
 
-    if (!json_object_object_get_ex(parsed_json, "users", &users_array)) {
-        const char *error_msg = "Missing 'users' array";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
-    }
-
-    if (!name || strlen(name) == 0) {
-        const char *error_msg = "Missing or invalid 'name' field";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
-    }
-
-    int is_group = 1;
-
-    int chat_id = create_chat(context->db_conn, name, is_group);
-    if (chat_id <= 0) {
-        const char *error_msg = "Failed to create chat";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-
-        logging(ERROR, "Failed to create chat '%s'", name);
-        return ret;
-    }
-
-    // Извлечение JWT для создателя чата
     char *creator_id = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_id) != 1) {
@@ -102,8 +68,58 @@ int handle_create_chat(HttpContext *context) {
         return ret;
     }
 
-    // Добавление создателя как администратора
-    if (add_chat_member(context->db_conn, chat_id, atoi(creator_id), 1) != 0) {
+    User *creator = get_user_by_uuid(context->db_conn, creator_id);
+    User *second_user = get_user_by_username(context->db_conn, with_user);
+
+    free(creator_id);
+    if (!second_user->id) {
+        logging(ERROR, "User with username '%s' not found", with_user);
+        const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        free(creator_id);
+        return ret;
+    }
+
+    int chat_id = private_chat_exist(context->db_conn, creator->id, second_user->id);
+    if (chat_id == -1) {
+        logging(ERROR, "Failed to check if private chat exists");
+        const char *error_msg = create_error_response("Failed to check if private chat exists", STATUS_INTERNAL_SERVER_ERROR);
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    } else if (chat_id > 0) {
+        const char *error_msg = create_response("already exists", STATUS_CONFLICT);
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_CONFLICT, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    }
+
+    char *chat_name = malloc(strlen(with_user) + strlen(second_user->username) + 2);
+    chat_id = create_chat(context->db_conn, chat_name, 0);
+
+    if (chat_id <= 0) {
+        const char *error_msg = "Failed to create chat";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+
+        logging(ERROR, "Failed to create chat '%s'", chat_name);
+        return ret;
+    }
+
+    if (add_chat_member(context->db_conn, chat_id, creator->id, 1) != 0) {
         const char *error_msg = "Failed to add chat creator";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
@@ -111,33 +127,28 @@ int handle_create_chat(HttpContext *context) {
         MHD_destroy_response(response);
         json_object_put(parsed_json);
 
-        logging(ERROR, "Failed to add creator '%s' to chat '%s'", creator_id, name);
+        logging(ERROR, "Failed to add creator '%s' to chat with user '%s'", creator->username, second_user->username);
         return ret;
     }
+    if (add_chat_member(context->db_conn, chat_id, second_user->id, 1) != 0) {
+        const char *error_msg = "Failed to add chat creator";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
 
-    // Добавление остальных участников
-    int user_count = json_object_array_length(users_array);
-    for (int i = 0; i < user_count; ++i) {
-        struct json_object *user_id_obj = json_object_array_get_idx(users_array, i);
-        int user_id = json_object_get_int(user_id_obj);
-
-        // Пропускаем добавление создателя чата
-        if (user_id == atoi(creator_id)) continue;
-
-        if (add_chat_member(context->db_conn, chat_id, user_id, 0) != 0) {
-            logging(WARN, "Failed to add user %d to chat %d", user_id, chat_id);
-        }
+        logging(ERROR, "Failed to add user '%s' to chat with creator '%s'",  creator->username, second_user->username);
+        return ret;
     }
-
     json_object_put(parsed_json);
-    free(creator_id);
 
-    const char *success_msg = "{\"status\":\"success\",\"message\":\"Group chat created successfully\"}";
+    const char *success_msg = create_response("Success", STATUS_OK);
     struct MHD_Response *response = MHD_create_response_from_buffer(
         strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
     int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
 
-    logging(INFO, "Group chat '%s' created successfully with ID %d", name, chat_id);
+    logging(INFO, "Success chat crete users: '%s' and '%s'", creator->username, second_user->username);
     return ret;
 }

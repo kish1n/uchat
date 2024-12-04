@@ -53,7 +53,6 @@ int handle_update_username(HttpContext *context) {
     if (json_object_object_get_ex(parsed_json, "new_username", &new_username_obj)) {
         new_username = json_object_get_string(new_username_obj);
     }
-
     if (json_object_object_get_ex(parsed_json, "password", &password_obj)) {
         password = json_object_get_string(password_obj);
     }

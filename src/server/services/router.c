@@ -56,6 +56,7 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/update_username") == 0 && strcmp(method, "PUT") == 0) {
             return handle_update_username(&context);
         }
+
     } else if (starts_with(url, "/messages/")) {
         const char *sub_url = url + strlen("/messages");
 
@@ -68,6 +69,7 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "POST") == 0) {
             return handle_edit_message(&context);
         }
+
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");
 
