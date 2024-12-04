@@ -15,6 +15,7 @@ int handle_create_private_chat(HttpContext *context);
 int handle_add_member_to_chat(HttpContext *context);
 int handle_remove_member_from_chat(HttpContext *context);
 int handle_leave_chat(HttpContext *context);
+int handle_update_chat_name(HttpContext *context);
 
 //TODO create:
 //int handle_get_chat_members(HttpContext *context);

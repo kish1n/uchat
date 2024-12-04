@@ -79,6 +79,9 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
             return handle_create_group_chat(&context);
         }
+        if (strcmp(sub_url, "/update_name") == 0 && strcmp(method, "PUT") == 0) {
+            return handle_update_chat_name(&context);
+        }
         if (strcmp(sub_url, "/add_member") == 0 && strcmp(method, "POST") == 0) {
             return handle_add_member_to_chat(&context);
         }
