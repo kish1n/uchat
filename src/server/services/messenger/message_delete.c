@@ -12,9 +12,37 @@
 
 
 int handle_delete_message(HttpContext *context) {
-    struct json_object *parsed_json = NULL;
+    Config cfg;
+    load_config("config.yaml", &cfg);
 
-    if (process_request_data(context, &parsed_json) != MHD_YES) {
+    if (!context) {
+        logging(ERROR, "Invalid context passed to handle_update_chat_name");
+        return MHD_NO;
+    }
+
+    // Allocate memory for incoming data if not already allocated
+    if (*context->con_cls == NULL) {
+        char *buffer = calloc(1, sizeof(char));
+        *context->con_cls = buffer;
+        return MHD_YES;
+    }
+
+    char *data = (char *)*context->con_cls;
+
+    // Accumulate incoming data
+    if (*context->upload_data_size > 0) {
+        data = realloc(data, strlen(data) + *context->upload_data_size + 1);
+        strncat(data, context->upload_data, *context->upload_data_size);
+        *context->upload_data_size = 0;
+        *context->con_cls = data;
+        return MHD_YES;
+    }
+
+    struct json_object *parsed_json = json_tokener_parse(data);
+    free(data);
+    *context->con_cls = NULL;
+
+    if (!parsed_json) {
         const char *error_msg = "Invalid JSON";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);

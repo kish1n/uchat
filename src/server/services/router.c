@@ -63,12 +63,6 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/send") == 0 && strcmp(method, "POST") == 0) {
             return handle_send_message(&context);
         }
-        if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "POST") == 0) {
-            return handle_delete_message(&context);
-        }
-        if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "POST") == 0) {
-            return handle_edit_message(&context);
-        }
 
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");

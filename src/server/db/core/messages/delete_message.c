@@ -5,22 +5,20 @@
 #include <string.h>
 
 int delete_message(PGconn *conn, int message_id) {
-    if (!conn) {
-        fprintf(stderr, "Invalid connection for delete_message\n");
+    if (!conn || message_id <= 0) {
+        fprintf(stderr, "Invalid parameters for delete_message\n");
         return -1;
     }
 
-    const char *query = "DELETE FROM messages WHERE id = $1;";
-    const char *paramValues[1] = {NULL};
-
+    const char *query = "DELETE FROM messages WHERE id = $1";
+    const char *paramValues[1];
     char message_id_str[12];
     snprintf(message_id_str, sizeof(message_id_str), "%d", message_id);
     paramValues[0] = message_id_str;
 
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error deleting message");
+        fprintf(stderr, "Error deleting message: %s\n", PQerrorMessage(conn));
         PQclear(res);
         return -1;
     }
