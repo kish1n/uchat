@@ -88,6 +88,23 @@ enum MHD_Result router(void *cls,
         if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "DELETE") == 0) {
             return handle_delete_chat(&context);
         }
+
+        // Handle dynamic URL for chat info: /chat/info/{chat_id}
+        if (starts_with(sub_url, "/info/") && strcmp(method, "GET") == 0) {
+            const char *id_str = sub_url + strlen("/info/");
+            int chat_id = atoi(id_str);
+            if (chat_id > 0) {
+                context.url = id_str;
+                return handle_get_chat_info(&context);
+            } else {
+                const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
+                struct MHD_Response *response = MHD_create_response_from_buffer(
+                    strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+                int ret = MHD_queue_response(context.connection, MHD_HTTP_BAD_REQUEST, response);
+                MHD_destroy_response(response);
+                return ret;
+            }
+        }
     }
 
     const char *error_msg = create_error_response("Endpoint not found", STATUS_NOT_FOUND);
