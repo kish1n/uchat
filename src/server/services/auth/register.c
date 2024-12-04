@@ -82,7 +82,7 @@ int handle_register(HttpContext *context) {
     }
 
     int result = create_user(context->db_conn, username, passhash);
-    free(passhash);  // Освобождаем память для passhash
+    free(passhash);
     json_object_put(parsed_json);
 
     if (result == 0) {

@@ -17,7 +17,7 @@ int delete_chat(PGconn *conn, int chat_id) {
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error deleting chat");
+        fprintf(stderr, "Error deleting chat");
         PQclear(res);
         return -1;
     }

@@ -20,7 +20,7 @@ int get_chat_by_id(PGconn *conn, int chat_id, Chat *chat) {
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        log_db_error(conn, "Error fetching chat by id");
+        fprintf(stderr, "Error fetching chat by id");
         PQclear(res);
         return -1;
     }

@@ -55,9 +55,9 @@ int handle_create_private_chat(HttpContext *context) {
         with_user = json_object_get_string(name_obj);
     }
 
-    char *creator_id = NULL;
+    char *cretaor_username = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
-    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_id) != 1) {
+    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &cretaor_username) != 1) {
         logging(ERROR, "JWT verification failed");
         const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -68,10 +68,13 @@ int handle_create_private_chat(HttpContext *context) {
         return ret;
     }
 
-    User *creator = get_user_by_uuid(context->db_conn, creator_id);
+    logging(INFO, "User ID: %s", cretaor_username);
+
+    User *creator = get_user_by_username(context->db_conn, cretaor_username);
     User *second_user = get_user_by_username(context->db_conn, with_user);
 
-    free(creator_id);
+    free(cretaor_username);
+
     if (!second_user->id) {
         logging(ERROR, "User with username '%s' not found", with_user);
         const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
@@ -80,7 +83,6 @@ int handle_create_private_chat(HttpContext *context) {
         int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
         MHD_destroy_response(response);
         json_object_put(parsed_json);
-        free(creator_id);
         return ret;
     }
 
@@ -104,18 +106,35 @@ int handle_create_private_chat(HttpContext *context) {
         return ret;
     }
 
-    char *chat_name = malloc(strlen(with_user) + strlen(second_user->username) + 2);
-    chat_id = create_chat(context->db_conn, chat_name, 0);
+    char *chat_name = malloc(strlen("private_") + strlen(creator->username) + strlen(second_user->username) + 2);
+    if (!chat_name) {
+        const char *error_msg = "Memory allocation failed for chat name";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        MHD_destroy_response(response);
 
+        logging(ERROR, "Failed to allocate memory for chat name");
+        json_object_put(parsed_json);
+        free_user(creator);
+        free_user(second_user);
+        return ret;
+    }
+    sprintf(chat_name, "private_%s_%s", creator->username, second_user->username);
+
+    chat_id = create_chat(context->db_conn, chat_name, 0);
     if (chat_id <= 0) {
         const char *error_msg = "Failed to create chat";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
-        json_object_put(parsed_json);
 
         logging(ERROR, "Failed to create chat '%s'", chat_name);
+        json_object_put(parsed_json);
+        free_user(creator);
+        free_user(second_user);
+        free(chat_name);
         return ret;
     }
 
@@ -125,22 +144,30 @@ int handle_create_private_chat(HttpContext *context) {
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
-        json_object_put(parsed_json);
 
-        logging(ERROR, "Failed to add creator '%s' to chat with user '%s'", creator->username, second_user->username);
+        logging(ERROR, "Failed to add creator '%s' to chat '%s'", creator->username, chat_name);
+        json_object_put(parsed_json);
+        free_user(creator);
+        free_user(second_user);
+        free(chat_name);
         return ret;
     }
+
     if (add_chat_member(context->db_conn, chat_id, second_user->id, 1) != 0) {
-        const char *error_msg = "Failed to add chat creator";
+        const char *error_msg = "Failed to add user to chat";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
-        json_object_put(parsed_json);
 
-        logging(ERROR, "Failed to add user '%s' to chat with creator '%s'",  creator->username, second_user->username);
+        logging(ERROR, "Failed to add user '%s' to chat '%s'", second_user->username, chat_name);
+        json_object_put(parsed_json);
+        free_user(creator);
+        free_user(second_user);
+        free(chat_name);
         return ret;
     }
+
     json_object_put(parsed_json);
 
     const char *success_msg = create_response("Success", STATUS_OK);
@@ -149,6 +176,11 @@ int handle_create_private_chat(HttpContext *context) {
     int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
 
-    logging(INFO, "Success chat crete users: '%s' and '%s'", creator->username, second_user->username);
+    logging(INFO, "Chat created successfully: '%s' between '%s' and '%s'", chat_name, creator->username, second_user->username);
+
+    free_user(creator);
+    free_user(second_user);
+    free(chat_name);
     return ret;
+
 }

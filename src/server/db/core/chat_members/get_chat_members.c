@@ -31,6 +31,7 @@ int get_chat_members(PGconn *conn, int chat_id, ChatMember **members, int *membe
     *member_count = rows;
 
     for (int i = 0; i < rows; i++) {
+        // user_id is now a string
         strncpy((*members)[i].user_id, PQgetvalue(res, i, 0), sizeof((*members)[i].user_id) - 1);
         (*members)[i].user_id[sizeof((*members)[i].user_id) - 1] = '\0';
 

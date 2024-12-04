@@ -14,7 +14,7 @@ int message_exists(PGconn *conn, int message_id) {
 
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        log_db_error(conn, "Error checking if message exists");
+        fprintf(stderr, "Error checking if message exists");
         PQclear(res);
         return 0;
     }

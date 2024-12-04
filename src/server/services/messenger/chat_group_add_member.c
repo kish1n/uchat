@@ -2,19 +2,18 @@
 #include <json-c/json.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../../db/core/chats/chats.h"
-#include "../../db/core/chat_members/chat_members.h"
-#include "../../pkg/http_response/response.h"
-#include "../../pkg/httputils/httputils.h"
+#include "../../pkg/config/config.h"
 #include "../../pkg/jwt_utils/jwt_utils.h"
+#include "../../db/core/chat_members/chat_members.h"
+#include "../../db/core/chats/chats.h"
 #include "../../db/core/users/users.h"
 
-int handle_delete_chat(HttpContext *context) {
+int handle_add_member_to_chat(HttpContext *context) {
     Config cfg;
     load_config("config.yaml", &cfg);
 
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_leave_chat");
+        logging(ERROR, "Invalid context passed to handle_add_member_to_chat");
         return MHD_NO;
     }
 
@@ -49,16 +48,22 @@ int handle_delete_chat(HttpContext *context) {
         return ret;
     }
 
-    struct json_object *chat_id_obj;
+    struct json_object *chat_id_obj, *username_obj;
+    const char *username = NULL;
     int chat_id = -1;
 
+    // Extract required fields
     if (json_object_object_get_ex(parsed_json, "chat_id", &chat_id_obj)) {
         chat_id = json_object_get_int(chat_id_obj);
     }
 
+    if (json_object_object_get_ex(parsed_json, "username", &username_obj)) {
+        username = json_object_get_string(username_obj);
+    }
+
     // Validate required fields
-    if (chat_id <= 0) {
-        const char *error_msg = "Missing or invalid 'id' field";
+    if (chat_id <= 0 || !username || strlen(username) == 0) {
+        const char *error_msg = "Missing or invalid 'chat_id' or 'username'";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -67,21 +72,9 @@ int handle_delete_chat(HttpContext *context) {
         return ret;
     }
 
-    // Check if the chat exists
-    if (!chat_exists(context->db_conn, chat_id)) {
-        const char *error_msg = "Chat does not exist";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
-    }
-
-    // Extract and verify JWT
-    char *username = NULL;
+    char *sender = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
-    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
+    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &sender) != 1) {
         logging(ERROR, "JWT verification failed");
         const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -92,12 +85,18 @@ int handle_delete_chat(HttpContext *context) {
         return ret;
     }
 
-    User *user = get_user_by_username(context->db_conn, username);
+    User *user = get_user_by_username(context->db_conn, sender);
 
     // Check if the user is an admin in the chat
-    if (!is_user_in_chat(context->db_conn, chat_id, user->id) ||
-        !is_user_admin(context->db_conn, chat_id, user->id)) {
-        logging(ERROR, "User '%s' is not an admin in chat ID '%d'", user->username, chat_id);
+    if (!is_user_in_chat(context->db_conn, chat_id, user->id) || !is_user_admin(context->db_conn, chat_id, user->id)) {
+
+        if (is_user_admin(context->db_conn, chat_id, user->id)) {
+            printf("User is an admin\n");
+        } else {
+            printf("User is not an admin\n");
+        }
+
+        logging(ERROR, "User '%s' is not an admin in chat ID '%d'", user->id, chat_id);
         const char *error_msg = create_error_response("forbidden", STATUS_FORBIDDEN);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
@@ -105,32 +104,46 @@ int handle_delete_chat(HttpContext *context) {
         MHD_destroy_response(response);
         json_object_put(parsed_json);
         return ret;
-        }
+    }
 
-
-    // Delete the chat from the database
-    int result = delete_chat(context->db_conn, chat_id);
-
-    json_object_put(parsed_json);
-    free(username);
-
-    if (result == 0) {
-        const char *success_msg = create_response("Successfully deleted chat", STATUS_OK);
+    // Find the user to be added by username
+    User *new_user = get_user_by_username(context->db_conn, username);
+    if (!new_user || !new_user->id) {
+        logging(ERROR, "User '%s' not found", username);
+        const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
         MHD_destroy_response(response);
-
-        logging(INFO, "Chat with id %d deleted successfully", chat_id);
+        json_object_put(parsed_json);
         return ret;
-    } else {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to delete chat\"}";
+    }
+
+    // Add the user to the chat
+    if (add_chat_member(context->db_conn, chat_id, new_user->id, 0) != 0) {
+        logging(ERROR, "Failed to add user '%s' to chat ID '%d'", username, chat_id);
+        const char *error_msg = create_error_response("Failed to add user to chat", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
         MHD_destroy_response(response);
-
-        logging(ERROR, "Failed to delete chat with id %d", chat_id);
+        json_object_put(parsed_json);
+        free_user(new_user);
         return ret;
     }
+
+    // Successful response
+    const char *success_msg = create_response("User added to chat", STATUS_OK);
+    struct MHD_Response *response = MHD_create_response_from_buffer(
+        strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
+    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
+    MHD_destroy_response(response);
+
+    logging(INFO, "User '%s' added to chat ID '%d' by admin '%s'", username, chat_id, user->username);
+
+    json_object_put(parsed_json);
+    free(user);
+    free(sender);
+    free_user(new_user);
+    return ret;
 }

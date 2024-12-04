@@ -73,10 +73,22 @@ enum MHD_Result router(void *cls,
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");
 
-        if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
-            return handle_create_chat(&context);
+        if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
+            return handle_create_private_chat(&context);
         }
-        if (strcmp(sub_url, "/delete_group") == 0 && strcmp(method, "POST") == 0) {
+        if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
+            return handle_create_group_chat(&context);
+        }
+        if (strcmp(sub_url, "/add_member") == 0 && strcmp(method, "POST") == 0) {
+            return handle_add_member_to_chat(&context);
+        }
+        if (strcmp(sub_url, "/remove_member") == 0 && strcmp(method, "DELETE") == 0) {
+            return handle_remove_member_from_chat(&context);
+        }
+        if (strcmp(sub_url, "/leave") == 0 && strcmp(method, "DELETE") == 0) {
+            return handle_leave_chat(&context);
+        }
+        if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "DELETE") == 0) {
             return handle_delete_chat(&context);
         }
     }

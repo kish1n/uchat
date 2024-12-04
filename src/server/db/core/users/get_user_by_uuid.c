@@ -11,20 +11,20 @@ User* get_user_by_uuid(PGconn *conn, const char *uuid) {
 
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        log_db_error(conn, "Error fetching user");
+        fprintf(stderr, "Error fetching user");
         PQclear(res);
         return NULL;
     }
 
     if (PQntuples(res) == 0) {
-        log_db_error(conn, "No user found with UUID");
+        fprintf(stderr, "No user found with UUID");
         PQclear(res);
         return NULL;
     }
 
     User *user = malloc(sizeof(User));
     if (!user) {
-        log_db_error(conn, "Failed to allocate memory for user");
+        fprintf(stderr, "Failed to allocate memory for user");
         PQclear(res);
         return NULL;
     }

@@ -19,7 +19,7 @@ int edit_message(PGconn *conn, int message_id, const char *new_content) {
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error editing message");
+        fprintf(stderr, "Error editing message");
         PQclear(res);
         return -1;
     }

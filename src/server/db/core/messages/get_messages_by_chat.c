@@ -20,7 +20,7 @@ int get_messages_by_chat(PGconn *conn, int chat_id, Message **messages, int *mes
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        log_db_error(conn, "Error fetching messages by chat");
+        fprintf(stderr, "Error fetching messages by chat");
         PQclear(res);
         return -1;
     }

@@ -26,7 +26,7 @@ int create_message(PGconn *conn, int chat_id, int sender_id, const char *content
     PGresult *res = PQexecParams(conn, query, 3, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error creating message");
+        fprintf(stderr, "Error creating message");
         PQclear(res);
         return -1;
     }

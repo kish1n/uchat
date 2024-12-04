@@ -20,7 +20,7 @@ int get_message_by_id(PGconn *conn, int message_id, Message *message) {
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        log_db_error(conn, "Error fetching message by id");
+        fprintf(stderr, "Error fetching message by id");
         PQclear(res);
         return -1;
     }

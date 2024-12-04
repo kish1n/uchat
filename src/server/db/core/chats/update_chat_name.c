@@ -17,7 +17,7 @@ int update_chat_name(PGconn *conn, int chat_id, const char *new_name) {
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error updating chat name");
+        fprintf(stderr, "Error updating chat name");
         PQclear(res);
         return -1;
     }

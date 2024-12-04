@@ -10,13 +10,14 @@ int is_user_in_chat(PGconn *conn, int chat_id, const char *user_id) {
     }
 
     const char *query =
-        "SELECT 1 FROM chat_members "
-        "WHERE chat_id = $1 AND user_id = $2";
+        "SELECT 1 "
+        "FROM chat_members "
+        "WHERE chat_id = $1 AND user_id::uuid = $2"; // Уточнение типа user_id как UUID
 
     const char *paramValues[2];
     char chat_id_str[12];
 
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
+    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id); // Преобразование chat_id в строку
     paramValues[0] = chat_id_str;
     paramValues[1] = user_id;
 

@@ -6,13 +6,14 @@
 #include "../../pkg/jwt_utils/jwt_utils.h"
 #include "../../db/core/chats/chats.h"
 #include "../../db/core/chat_members/chat_members.h"
+#include "../../db/core/users/users.h"
 
 int handle_create_group_chat(HttpContext *context) {
     Config cfg;
     load_config("config.yaml", &cfg);
 
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_create_chat");
+        logging(ERROR, "Invalid context passed to handle_create_group_chat");
         return MHD_NO;
     }
 
@@ -84,9 +85,9 @@ int handle_create_group_chat(HttpContext *context) {
         return ret;
     }
 
-    char *creator_id = NULL;
+    char *creator_username = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
-    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_id) != 1) {
+    if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_username) != 1) {
         logging(ERROR, "JWT verification failed");
         const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
         struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -97,7 +98,9 @@ int handle_create_group_chat(HttpContext *context) {
         return ret;
     }
 
-    if (add_chat_member(context->db_conn, chat_id, atoi(creator_id), 1) != 0) {
+    User *creator = get_user_by_username(context->db_conn, creator_username);
+
+    if (add_chat_member(context->db_conn, chat_id, creator->id, 1) != 0) {
         const char *error_msg = "Failed to add chat creator";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
@@ -105,26 +108,33 @@ int handle_create_group_chat(HttpContext *context) {
         MHD_destroy_response(response);
         json_object_put(parsed_json);
 
-        logging(ERROR, "Failed to add creator '%s' to chat '%s'", creator_id, name);
+        logging(ERROR, "Failed to add creator '%s' to chat '%s'", creator->username, name);
         return ret;
     }
 
-    int user_count = json_object_array_length(users_array);
-    for (int i = 0; i < user_count; ++i) {
-        struct json_object *user_id_obj = json_object_array_get_idx(users_array, i);
-        int user_id = json_object_get_int(user_id_obj);
+    size_t user_count = json_object_array_length(users_array);
+    for (size_t i = 0; i < user_count; ++i) {
+        struct json_object *username_obj = json_object_array_get_idx(users_array, i);
+        const char *username = json_object_get_string(username_obj);
 
-        if (user_id == atoi(creator_id)) continue;
+        if (!username || strcmp(username, creator_username) == 0) continue;
 
-        if (add_chat_member(context->db_conn, chat_id, user_id, 0) != 0) {
-            logging(WARN, "Failed to add user %d to chat %d", user_id, chat_id);
+        User *user = get_user_by_username(context->db_conn, username);
+        if (!user) {
+            logging(WARN, "User '%s' not found, skipping", username);
+            continue;
         }
+
+        if (add_chat_member(context->db_conn, chat_id, user->id, 0) != 0) {
+            logging(WARN, "Failed to add user %s to chat %d", user->username, chat_id);
+        }
+        free_user(user);
     }
 
     json_object_put(parsed_json);
-    free(creator_id);
+    free(creator_username);
 
-    const char *success_msg = "{\"status\":\"success\",\"message\":\"Group chat created successfully\"}";
+    const char *success_msg = create_response("success", STATUS_OK);
     struct MHD_Response *response = MHD_create_response_from_buffer(
         strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
     int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);

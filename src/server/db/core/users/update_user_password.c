@@ -9,7 +9,7 @@ int update_user_password(PGconn *conn, const char *uuid, const char *new_passhas
 
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error updating user password");
+        fprintf(stderr, "Error updating user password");
         PQclear(res);
         return -1;
     }

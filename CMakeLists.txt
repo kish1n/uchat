@@ -68,6 +68,12 @@ add_executable(uchat_auth
         src/server/pkg/httputils/process_request_data.c
         src/server/services/messenger/chat_private_create.c
         src/server/db/core/chats/chat_private_exist.c
+        src/server/services/messenger/chat_group_add_member.c
+        src/server/db/core/chat_members/is_user_admin.c
+        src/server/services/messenger/chat_group_kick_user.c
+        src/server/db/core/chat_members/delete_user_from_chat.c
+        src/server/services/messenger/chat_group_leave.c
+        src/server/db/core/users/check_user_credentials.c
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

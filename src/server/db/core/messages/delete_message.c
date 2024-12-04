@@ -20,7 +20,7 @@ int delete_message(PGconn *conn, int message_id) {
     PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error deleting message");
+        fprintf(stderr, "Error deleting message");
         PQclear(res);
         return -1;
     }
