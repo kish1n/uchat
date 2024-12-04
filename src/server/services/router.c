@@ -14,14 +14,15 @@ enum MHD_Result handle_request(void *cls,
                                size_t *upload_data_size,
                                void **con_cls) {
 
-    Config config;
+    /*Config config;
     if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
 
         return EXIT_FAILURE;
-    }
+    }*/
+   Config *config = (Config *)cls;
 
-    PGconn *db_conn = connect_db(config.database.url);
+    PGconn *db_conn = connect_db(config->database.url);
     if (db_conn == NULL || PQstatus(db_conn) != CONNECTION_OK) {
         logging(ERROR, "Failed to connect to database: %s", PQerrorMessage(db_conn));
         if (db_conn) disconnect_db(db_conn);
@@ -37,7 +38,8 @@ enum MHD_Result handle_request(void *cls,
         .upload_data = upload_data,
         .upload_data_size = upload_data_size,
         .con_cls = con_cls,
-        .db_conn = db_conn
+        .db_conn = db_conn,
+        .jwt_secret = config->security.jwt_secret
     };
 
     if (strcmp(url, "/register") == 0 && strcmp(method, "POST") == 0) {

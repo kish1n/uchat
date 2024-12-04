@@ -7,6 +7,7 @@
 #include <microhttpd.h>
 #include <libpq-fe.h>
 #include "../pkg/config/config.h"
+#include <errno.h>
 
 #define MAX_HANDLERS 100
 #define MAX_PATH_LEN 256
@@ -24,7 +25,7 @@ typedef struct {
 } RequestData;
 
 Server *server_init(int port, PGconn *db_conn);
-int server_start(Server *server);
+int server_start(Server *server, Config *config);
 void server_stop(Server *server);
 void server_destroy(Server *server);
 
@@ -37,5 +38,13 @@ enum MHD_Result handle_request(void *cls,
     const char *upload_data,
     size_t *upload_data_size,
     void **con_cls);
+
+void daemonize(void);
+void signal_handler(int sig);
+
+typedef struct {
+    Server *server;
+    PGconn *db_conn;
+} ServerState;
 
 #endif

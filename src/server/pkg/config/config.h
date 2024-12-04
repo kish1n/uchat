@@ -49,6 +49,7 @@ typedef struct {
     size_t *upload_data_size;
     void **con_cls;
     PGconn *db_conn;
+    const char *jwt_secret;
 } HttpContext;
 
 int load_config(const char *filename, Config *config);

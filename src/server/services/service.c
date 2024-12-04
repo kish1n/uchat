@@ -17,10 +17,10 @@ Server* server_init(int port, PGconn *db_conn) {
 }
 
 
-int server_start(Server *server) {
+int server_start(Server *server, Config *config) {
     server->daemon = MHD_start_daemon(
         MHD_USE_SELECT_INTERNALLY, server->port, NULL, NULL,
-        &handle_request, NULL, MHD_OPTION_NOTIFY_COMPLETED, &free_request_data, NULL, MHD_OPTION_END);
+        &handle_request, config, NULL, MHD_OPTION_NOTIFY_COMPLETED, &free_request_data, NULL, MHD_OPTION_END);
     if (!server->daemon) {
         logging(ERROR, "Failed to start server on port %d\n", server->port);
         return -1;

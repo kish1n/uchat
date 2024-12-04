@@ -4,8 +4,7 @@
 #include "src/server/services/service.h"
 #include "src/server/db/core/core.h"
 #include "src/server/pkg/config/config.h"
-
-//#define PORT 8080
+#include <fcntl.h>
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -34,6 +33,11 @@ int main(int argc, char *argv[]) {
     init_logger(&config.logging);
     logging(INFO, "Server is starting...");
 
+    daemonize();
+
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
+
     PGconn *db_conn = connect_db(config.database.url);
     if (db_conn == NULL || PQstatus(db_conn) != CONNECTION_OK) {
         logging(ERROR, "Failed to connect to database: %s", PQerrorMessage(db_conn));
@@ -51,7 +55,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (server_start(server) != 0) {
+    if (server_start(server, &config) != 0) {
         logging(ERROR, "Failed to start server");
         server_destroy(server);
         disconnect_db(db_conn);
@@ -62,7 +66,7 @@ int main(int argc, char *argv[]) {
     logging(INFO, "Server is running on port %d", port);
     logging(INFO, "Press Enter to stop the server...");
 
-    getchar();
+    while(1) pause();
 
     logging(INFO, "Server is shutting down...");
     server_destroy(server);
