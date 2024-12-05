@@ -78,6 +78,11 @@ add_executable(uchat_auth
         src/server/db/core/chats/is_chat_group.c
         src/server/db/core/chats/get_chat_name.c
         src/server/services/messenger/chat_get_info.c
+        src/server/pkg/ws/ws.h
+        src/server/pkg/ws/remove_client.c
+        src/server/pkg/ws/broadcast_message.c
+        src/server/pkg/ws/add_client.c
+
 )
 
 target_link_libraries(uchat_auth yaml pq microhttpd crypto json-c sodium jwt)

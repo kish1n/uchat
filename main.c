@@ -26,18 +26,6 @@ int main() {
     }
     logging(INFO, "Database connection established successfully");
 
-    // if (execute_migration(db_conn, "../src/db/assets/migrations/001_drop.sql") != 0) {
-    //     fprintf(stderr, "Drop migration failed\n");
-    //     PQfinish(db_conn);
-    //     return EXIT_FAILURE;
-    // }
-    //
-    // if (execute_migration(db_conn, "../src/db/assets/migrations/001_init.sql") != 0) {
-    //     fprintf(stderr, "Up migration failed\n");
-    //     PQfinish(db_conn);
-    //     return EXIT_FAILURE;
-    // }
-
 
     Server *server = server_init(PORT, db_conn);
     if (!server) {

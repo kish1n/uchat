@@ -41,6 +41,10 @@ enum MHD_Result router(void *cls,
         .db_conn = db_conn
     };
 
+    if (strcmp(url, "/ws") == 0 && strcmp(method, "GET") == 0) {
+        return handle_websocket_connection(&context);
+    }
+
     if (starts_with(url, "/auth/")) {
         const char *sub_url = url + strlen("/auth");
 

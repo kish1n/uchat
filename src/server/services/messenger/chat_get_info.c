@@ -15,22 +15,6 @@ int handle_get_chat_info(HttpContext *context) {
 
     const char *url = context->url;
     int chat_id = atoi(url);
-    // Extract chat_id from URL: /chats/info/{chat_id}
-    // int chat_id = -1;
-    // const char *prefix = "/chats/info/";
-    // if (strncmp(url, prefix, strlen(prefix)) == 0) {
-    //     const char *id_str = url + strlen(prefix); // Получаем часть после /chats/info/
-    //     if (id_str && strlen(id_str) > 0) {
-    //         chat_id = atoi(id_str); // Преобразуем ID в число
-    //         if (chat_id <= 0) {
-    //             logging(ERROR, "Invalid chat_id: %s", id_str);
-    //         }
-    //     } else {
-    //         logging(ERROR, "No chat_id provided in URL: %s", url);
-    //     }
-    // } else {
-    //     logging(ERROR, "URL does not match prefix: %s", url);
-    // }
 
     if (chat_id <= 0) {
         const char *error_msg = create_error_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST);
