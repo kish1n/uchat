@@ -1,33 +1,28 @@
+#include "chats.h"
+#include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <libpq-fe.h>
-#include <string.h>
 
+int create_chat(sqlite3 *db, const char *chat_name, int is_group) {
+    const char *query =
+        "INSERT INTO chats (name, is_group) VALUES (?, ?)";
 
-int create_chat(PGconn *conn, const char *name, int is_group) {
-    if (!conn || !name) {
-        fprintf(stderr, "Invalid parameters for create_chat\n");
-        return -1;
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    const char *query = "INSERT INTO chats (name, is_group, created_at) VALUES ($1, $2, CURRENT_TIMESTAMP) RETURNING id;";
-    const char *paramValues[2] = {name, NULL};
-    char is_group_str[2]; // Для преобразования `is_group` в строку
-    snprintf(is_group_str, sizeof(is_group_str), "%d", is_group);
-    paramValues[1] = is_group_str;
+    sqlite3_bind_text(stmt, 1, chat_name, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, is_group);
 
-    PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error inserting chat: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
     }
 
-    // Получаем id созданного чата
-    char *id_str = PQgetvalue(res, 0, 0);
-    int chat_id = atoi(id_str);
-
-    PQclear(res);
-    return chat_id;
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
 }

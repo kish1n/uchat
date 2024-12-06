@@ -15,6 +15,10 @@ int init_db(const char *db_file) {
     return 0;
 }
 
+sqlite3 *get_db() {
+    return db;
+}
+
 void close_db() {
     if (db) {
         sqlite3_close(db);

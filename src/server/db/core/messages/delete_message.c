@@ -4,25 +4,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-int delete_message(PGconn *conn, int message_id) {
-    if (!conn || message_id <= 0) {
-        fprintf(stderr, "Invalid parameters for delete_message\n");
+int delete_message(sqlite3 *db, int message_id) {
+    const char *query = "DELETE FROM messages WHERE id = ?";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    const char *query = "DELETE FROM messages WHERE id = $1";
-    const char *paramValues[1];
-    char message_id_str[12];
-    snprintf(message_id_str, sizeof(message_id_str), "%d", message_id);
-    paramValues[0] = message_id_str;
+    sqlite3_bind_int(stmt, 1, message_id);
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error deleting message: %s\n", PQerrorMessage(conn));
-        PQclear(res);
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
         return -1;
     }
 
-    PQclear(res);
+    sqlite3_finalize(stmt);
     return 0;
 }

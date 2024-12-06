@@ -1,31 +1,25 @@
 #include "chats.h"
-#include <stdlib.h>
+#include <sqlite3.h>
 #include <stdio.h>
-#include <libpq-fe.h>
+#include <stdlib.h>
 
-int is_chat_group(PGconn *conn, int chat_id) {
-    if (!conn || chat_id <= 0) {
-        fprintf(stderr, "Invalid parameters for is_chat_group\n");
-        return 0;
-    }
-
+int is_chat_group(sqlite3 *db, int chat_id) {
     const char *query =
-        "SELECT 1 FROM chats WHERE id = $1 AND is_group = true";
+        "SELECT is_group FROM chats WHERE id = ?";
 
-    const char *paramValues[1];
-    char chat_id_str[12];
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[0] = chat_id_str;
-
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error checking if chat is a group: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return 0;
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return 0; // 0 означает, что чат не является группой
     }
 
-    int is_group = (PQntuples(res) > 0); // Если есть результат, то это группа
+    sqlite3_bind_int(stmt, 1, chat_id);
 
-    PQclear(res);
+    int is_group = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        is_group = sqlite3_column_int(stmt, 0);
+    }
+
+    sqlite3_finalize(stmt);
     return is_group;
 }

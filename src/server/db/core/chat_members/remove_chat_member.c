@@ -1,32 +1,26 @@
-#include "chat_members.h"
-#include "../../../pkg/config/config.h"
 #include <stdio.h>
-#include <stdlib.h>
+#include <sqlite3.h>
+#include "chat_members.h"
 
-int remove_chat_member(PGconn *conn, int chat_id, const char *user_id) {
-    if (!conn || !user_id) {
-        fprintf(stderr, "Invalid parameters for remove_chat_member\n");
-        return -1;
+int remove_chat_member(sqlite3 *db, int chat_id, const char *user_id) {
+    const char *sql = "DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?";
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    const char *query =
-        "DELETE FROM chat_members "
-        "WHERE chat_id = $1 AND user_id = $2";
+    sqlite3_bind_int(stmt, 1, chat_id);
+    sqlite3_bind_text(stmt, 2, user_id, -1, SQLITE_STATIC);
 
-    const char *paramValues[2];
-    char chat_id_str[12];
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[0] = chat_id_str;
-    paramValues[1] = user_id;
-
-    PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error removing chat member: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    PQclear(res);
-    return 0;
+    return SQLITE_OK;
 }

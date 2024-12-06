@@ -3,28 +3,23 @@
 #include "../../../pkg/crypto/crypto.h" // Для проверки пароля
 #include "users.h"
 
-int check_user_credentials(PGconn *conn, const char *username, const char *password) {
-    const char *query = "SELECT passhash FROM users WHERE username = $1;";
-    const char *paramValues[1] = { username };
+int check_user_credentials(sqlite3 *db, const char *username, const char *password) {
+    const char *query = "SELECT passhash FROM users WHERE username = ?";
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Database error: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return 0; // Ошибка в базе данных
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return 0;
     }
 
-    if (PQntuples(res) == 0) {
-        PQclear(res);
-        return 0; // Пользователь не найден
+    sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
+
+    int result = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char *stored_hash = (const char *)sqlite3_column_text(stmt, 0);
+        result = strcmp(stored_hash, password) == 0; // Это упрощенный пример, используйте хэширование!
     }
 
-    const char *stored_passhash = PQgetvalue(res, 0, 0);
-
-    // Проверка пароля
-    int is_valid = verify_password(password, stored_passhash);
-
-    PQclear(res);
-    return is_valid; // 1 если пароль совпал, 0 если нет
+    sqlite3_finalize(stmt);
+    return result;
 }

@@ -1,28 +1,25 @@
-#include <libpq-fe.h>
+#include "chats.h"
+#include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-int chat_exists(PGconn *conn, int chat_id) {
-    if (!conn) {
-        fprintf(stderr, "Invalid database connection in chat_exists\n");
-        return 0;
+int chat_exists(sqlite3 *db, int chat_id) {
+    const char *query =
+        "SELECT COUNT(*) FROM chats WHERE id = ?";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return 0; // Возвращаем 0, так как это означает "не существует"
     }
 
-    const char *query = "SELECT 1 FROM chats WHERE id = $1;";
-    const char *paramValues[1];
-    char chat_id_str[12];
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[0] = chat_id_str;
+    sqlite3_bind_int(stmt, 1, chat_id);
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error checking chat existence: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return 0;
+    int exists = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        exists = sqlite3_column_int(stmt, 0) > 0;
     }
 
-    int exists = PQntuples(res) > 0; // Если хотя бы одна строка вернулась, чат существует
-    PQclear(res);
+    sqlite3_finalize(stmt);
     return exists;
 }

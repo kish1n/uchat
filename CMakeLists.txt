@@ -14,8 +14,6 @@ link_directories(/usr/lib/x86_64-linux-gnu)
 add_executable(uchat_auth
         main.c
 
-        src/server/db/core/db.c
-        src/server/db/core/migrations.c
         src/server/db/core/core.h
         src/server/db/core/users/delete_user.c
 

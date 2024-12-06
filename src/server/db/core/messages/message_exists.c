@@ -1,27 +1,18 @@
 #include "messages.h"
 
-int message_exists(PGconn *conn, int message_id) {
-    if (!conn || message_id <= 0) {
-        fprintf(stderr, "Invalid parameters for message_exists\n");
+int message_exists(sqlite3 *db, int message_id) {
+    const char *query = "SELECT 1 FROM messages WHERE id = ?";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return 0;
     }
 
-    const char *query =
-        "SELECT 1 FROM messages WHERE id = $1";
-    const char *paramValues[1];
-    char message_id_str[12];
-    snprintf(message_id_str, sizeof(message_id_str), "%d", message_id);
-    paramValues[0] = message_id_str;
+    sqlite3_bind_int(stmt, 1, message_id);
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error checking if message exists: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return 0;
-    }
+    int exists = (sqlite3_step(stmt) == SQLITE_ROW);
 
-    int exists = PQntuples(res) > 0 ? 1 : 0;
-
-    PQclear(res);
+    sqlite3_finalize(stmt);
     return exists;
 }

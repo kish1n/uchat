@@ -1,27 +1,28 @@
 #include "chats.h"
-#include "../../../pkg/config/config.h"
+#include <sqlite3.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int update_chat_name(PGconn *conn, int chat_id, const char *new_name) {
-    if (!conn || !new_name) {
-        fprintf(stderr, "Invalid parameters for update_chat_name\n");
-        return -1;
+int update_chat_name(sqlite3 *db, int chat_id, const char *new_name) {
+    const char *query =
+        "UPDATE chats SET name = ? WHERE id = ?";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    const char *query = "UPDATE chats SET name = $1 WHERE id = $2;";
-    const char *paramValues[2] = {new_name, NULL};
+    sqlite3_bind_text(stmt, 1, new_name, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, chat_id);
 
-    char chat_id_str[12];
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[1] = chat_id_str;
-
-    PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
-
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error updating chat name");
-        PQclear(res);
-        return -1;
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
     }
 
-    PQclear(res);
-    return 0;
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
 }

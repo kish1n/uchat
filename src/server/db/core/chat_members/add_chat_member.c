@@ -1,36 +1,28 @@
-#include "chat_members.h"
-#include "../../../pkg/config/config.h"
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
+#include <sqlite3.h>
+#include "chat_members.h"
 
-int add_chat_member(PGconn *conn, int chat_id, const char *user_id, int is_admin) {
-    if (!conn || !user_id) {
-        fprintf(stderr, "Invalid parameters for add_chat_member\n");
-        return -1;
+int add_chat_member(sqlite3 *db, int chat_id, const char *user_id, int is_admin) {
+    const char *sql = "INSERT INTO chat_members (chat_id, user_id, is_admin, joined_at) VALUES (?, ?, ?, datetime('now'))";
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    const char *query =
-        "INSERT INTO chat_members (chat_id, user_id, is_admin) "
-        "VALUES ($1, $2, $3)";
+    sqlite3_bind_int(stmt, 1, chat_id);
+    sqlite3_bind_text(stmt, 2, user_id, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3, is_admin);
 
-    const char *paramValues[3];
-    char chat_id_str[12];
-    char is_admin_str[2];
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    snprintf(is_admin_str, sizeof(is_admin_str), "%d", is_admin);
-
-    paramValues[0] = chat_id_str;
-    paramValues[1] = user_id;
-    paramValues[2] = is_admin_str;
-
-    PGresult *res = PQexecParams(conn, query, 3, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error adding chat member: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        return SQLITE_ERROR;
     }
 
-    PQclear(res);
-    return 0;
+    return SQLITE_OK;
 }

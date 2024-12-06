@@ -1,35 +1,24 @@
-#include "chat_members.h"
-#include "../../../pkg/config/config.h"
 #include <stdio.h>
-#include <stdlib.h>
+#include <sqlite3.h>
+#include "chat_members.h"
 
-int is_user_in_chat(PGconn *conn, int chat_id, const char *user_id) {
-    if (!conn || !user_id) {
-        fprintf(stderr, "Invalid parameters for is_user_in_chat\n");
+int is_user_in_chat(sqlite3 *db, int chat_id, const char *user_id) {
+    const char *sql = "SELECT COUNT(*) FROM chat_members WHERE chat_id = ? AND user_id = ?";
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    const char *query =
-        "SELECT 1 "
-        "FROM chat_members "
-        "WHERE chat_id = $1 AND user_id::uuid = $2"; // Уточнение типа user_id как UUID
+    sqlite3_bind_int(stmt, 1, chat_id);
+    sqlite3_bind_text(stmt, 2, user_id, -1, SQLITE_STATIC);
 
-    const char *paramValues[2];
-    char chat_id_str[12];
-
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id); // Преобразование chat_id в строку
-    paramValues[0] = chat_id_str;
-    paramValues[1] = user_id;
-
-    PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error checking user in chat: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    int result = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        result = sqlite3_column_int(stmt, 0);
     }
 
-    int exists = PQntuples(res) > 0 ? 1 : 0;
-
-    PQclear(res);
-    return exists;
+    sqlite3_finalize(stmt);
+    return result > 0;
 }
