@@ -84,6 +84,10 @@ add_executable(uchat_auth
         src/server/pkg/ws/add_client.c
         src/server/pkg/ws/ws_chat_handler.c
         src/server/pkg/ws/ws_server_start.c
+        src/server/db/core/chats/get_chat_messages.c
+        src/server/services/messenger/chat_get_history.c
+        src/server/db/core/chats/get_user_chats.c
+        src/server/services/messenger/user_get_chats.c
 
 )
 

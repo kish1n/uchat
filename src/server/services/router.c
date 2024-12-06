@@ -67,6 +67,20 @@ enum MHD_Result router(void *cls,
             return handle_send_message(&context);
         }
 
+        const char *id_str = sub_url + strlen("/history/");
+        int chat_id = atoi(id_str);
+        if (chat_id > 0) {
+            context.url = id_str;
+            return handle_get_chat_history(&context);
+        } else {
+            const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
+            struct MHD_Response *response = MHD_create_response_from_buffer(
+                strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+            int ret = MHD_queue_response(context.connection, MHD_HTTP_BAD_REQUEST, response);
+            MHD_destroy_response(response);
+            return ret;
+        }
+
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");
 
@@ -107,6 +121,13 @@ enum MHD_Result router(void *cls,
                 MHD_destroy_response(response);
                 return ret;
             }
+        }
+
+    } else if (starts_with(url, "/user/")) {
+        const char *sub_url = url + strlen("/user");
+
+        if (strcmp(sub_url, "/chats") == 0 && strcmp(method, "GET") == 0) {
+            return handle_get_user_chats(&context);
         }
     }
 

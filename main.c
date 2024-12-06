@@ -34,14 +34,14 @@ int main() {
     }
     logging(INFO, "Database connection established successfully");
 
-    pthread_t ws_thread;
-    int ws_port = 8081;
-    if (pthread_create(&ws_thread, NULL, start_ws_server, &ws_port) != 0) {
-        logging(ERROR, "Failed to create WebSocket server thread");
-        disconnect_db(db_conn);
-        close_logger();
-        return EXIT_FAILURE;
-    }
+    // pthread_t ws_thread;
+    // int ws_port = 8081;
+    // if (pthread_create(&ws_thread, NULL, start_ws_server, &ws_port) != 0) {
+    //     logging(ERROR, "Failed to create WebSocket server thread");
+    //     disconnect_db(db_conn);
+    //     close_logger();
+    //     return EXIT_FAILURE;
+    // }
 
     Server *server = server_init(PORT, db_conn);
     if (!server) {

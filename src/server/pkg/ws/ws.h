@@ -7,6 +7,8 @@
 #include <string.h>
 
 #define MAX_CLIENTS 100
+#define MAX_MESSAGE_SIZE 1024 // 1 КБ для текстовых сообщений
+
 
 typedef struct Client {
     char chat_id[64];
