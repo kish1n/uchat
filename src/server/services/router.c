@@ -49,30 +49,30 @@ enum MHD_Result router(void *cls,
         const char *sub_url = url + strlen("/auth");
 
         if (strcmp(sub_url, "/register") == 0 && strcmp(method, "POST") == 0) {
-            return handle_register(&context);
+            return handle_register(&context); //{"username": "username","password": "password"}
         }
         if (strcmp(sub_url, "/login") == 0 && strcmp(method, "POST") == 0) {
-            return handle_login(&context);
+            return handle_login(&context); //{"username": "username","password": "password"}
         }
         if (strcmp(sub_url, "/logout") == 0 && strcmp(method, "GET") == 0) {
-            return handle_logout(&context);
+            return handle_logout(&context); //GET
         }
         if (strcmp(sub_url, "/update_username") == 0 && strcmp(method, "PUT") == 0) {
-            return handle_update_username(&context);
+            return handle_update_username(&context); //{"username": "new_username"}
         }
 
     } else if (starts_with(url, "/messages/")) {
         const char *sub_url = url + strlen("/messages");
 
         if (strcmp(sub_url, "/send") == 0 && strcmp(method, "POST") == 0) {
-            return handle_send_message(&context);
+            return handle_send_message(&context); //{"chat_id": "chat_id", "content": "message"}
         }
 
         const char *id_str = sub_url + strlen("/history/");
         int chat_id = atoi(id_str);
         if (chat_id > 0) {
             context.url = id_str;
-            return handle_get_chat_history(&context);
+            return handle_get_chat_history(&context); //GET
         } else {
             const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
             struct MHD_Response *response = MHD_create_response_from_buffer(
@@ -86,25 +86,25 @@ enum MHD_Result router(void *cls,
         const char *sub_url = url + strlen("/chats");
 
         if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
-            return handle_create_private_chat(&context);
+            return handle_create_private_chat(&context); //{"with_user": "username"}
         }
         if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
-            return handle_create_group_chat(&context);
+            return handle_create_group_chat(&context); //{"name": "chat_name", "users": ["username1", "username2", ...]}
         }
         if (strcmp(sub_url, "/update_name") == 0 && strcmp(method, "PUT") == 0) {
-            return handle_update_chat_name(&context);
+            return handle_update_chat_name(&context); //{"chat_id": "chat_id", "name": "new_name"}
         }
         if (strcmp(sub_url, "/add_member") == 0 && strcmp(method, "POST") == 0) {
-            return handle_add_member_to_chat(&context);
+            return handle_add_member_to_chat(&context); //{"chat_id": "chat_id", "username": "username"}
         }
         if (strcmp(sub_url, "/remove_member") == 0 && strcmp(method, "DELETE") == 0) {
-            return handle_remove_member_from_chat(&context);
+            return handle_remove_member_from_chat(&context); //{"chat_id": "chat_id", "username": "username"}
         }
         if (strcmp(sub_url, "/leave") == 0 && strcmp(method, "DELETE") == 0) {
-            return handle_leave_chat(&context);
+            return handle_leave_chat(&context); //{"chat_id": "chat_id"}
         }
         if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "DELETE") == 0) {
-            return handle_delete_chat(&context);
+            return handle_delete_chat(&context); //{"chat_id": "chat_id"}
         }
 
         // Handle dynamic URL for chat info: /chat/info/{chat_id}
