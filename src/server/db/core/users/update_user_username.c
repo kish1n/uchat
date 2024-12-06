@@ -9,7 +9,7 @@ int update_user_username(PGconn *conn, const char *username, const char *new_use
 
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error updating user username");
+        fprintf(stderr, "Error updating user username");
         PQclear(res);
         return -1;
     }

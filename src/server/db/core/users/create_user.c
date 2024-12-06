@@ -9,7 +9,7 @@ int create_user(PGconn *conn, const char *username, const char *passhash) {
 
     PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        log_db_error(conn, "Error creating user");
+        fprintf(stderr, "Error creating user");
         PQclear(res);
         return -1;
     }

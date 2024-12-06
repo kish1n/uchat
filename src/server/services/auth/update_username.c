@@ -1,28 +1,24 @@
+#include "auth_handlers.h"
+#include <json-c/json.h>
+#include <stdlib.h>
+#include <string.h>
+#include "../../pkg/httputils/httputils.h"
 #include "../../db/core/users/users.h"
 #include "../../db/core/core.h"
 #include "../../pkg/crypto/crypto.h"
 #include "../../pkg/jwt_utils/jwt_utils.h"
-#include <json-c/json.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "auth_handlers.h"
 
 int handle_update_username(HttpContext *context) {
     Config cfg;
     load_config("config.yaml", &cfg);
 
     if (!context) {
-        logging(ERROR, "Invalid context passed to handle_update_username");
+        logging(ERROR, "Invalid context passed to handle_create_chat");
         return MHD_NO;
     }
 
     if (*context->con_cls == NULL) {
         char *buffer = calloc(1, sizeof(char));
-        if (!buffer) {
-            logging(ERROR, "Memory allocation failed for con_cls");
-            return MHD_NO;
-        }
         *context->con_cls = buffer;
         return MHD_YES;
     }
@@ -30,15 +26,7 @@ int handle_update_username(HttpContext *context) {
     char *data = (char *)*context->con_cls;
 
     if (*context->upload_data_size > 0) {
-        size_t new_size = strlen(data) + *context->upload_data_size + 1;
-        char *temp = realloc(data, new_size);
-        if (!temp) {
-            logging(ERROR, "Memory allocation failed during data accumulation");
-            free(data);
-            *context->con_cls = NULL;
-            return MHD_NO;
-        }
-        data = temp;
+        data = realloc(data, strlen(data) + *context->upload_data_size + 1);
         strncat(data, context->upload_data, *context->upload_data_size);
         *context->upload_data_size = 0;
         *context->con_cls = data;
@@ -50,8 +38,7 @@ int handle_update_username(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        logging(ERROR, "Invalid JSON format in request");
-        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
+        const char *error_msg = "Invalid JSON";
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
         int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
@@ -66,7 +53,6 @@ int handle_update_username(HttpContext *context) {
     if (json_object_object_get_ex(parsed_json, "new_username", &new_username_obj)) {
         new_username = json_object_get_string(new_username_obj);
     }
-
     if (json_object_object_get_ex(parsed_json, "password", &password_obj)) {
         password = json_object_get_string(password_obj);
     }

@@ -23,13 +23,25 @@ typedef struct {
     size_t size;
 } RequestData;
 
+typedef struct WebSocketConnection {
+    int client_id;
+    struct MHD_Connection *connection;
+    struct WebSocketConnection *next;
+} WebSocketConnection;
+
+typedef struct WebSocketServer {
+    WebSocketConnection *clients;
+    int client_count;
+    pthread_mutex_t lock;
+} WebSocketServer;
+
 Server *server_init(int port, PGconn *db_conn);
 int server_start(Server *server);
 void server_stop(Server *server);
 void server_destroy(Server *server);
 
 void free_request_data(void *con_cls);
-enum MHD_Result handle_request(void *cls,
+enum MHD_Result router(void *cls,
     struct MHD_Connection *connection,
     const char *url,
     const char *method,

@@ -4,8 +4,16 @@
 #include "src/server/services/service.h"
 #include "src/server/db/core/core.h"
 #include "src/server/pkg/config/config.h"
+#include <pthread.h>
+#include "src/server/pkg/ws/ws.h"
 
 #define PORT 8080
+
+void *start_ws_server(void *arg) {
+    int ws_port = *(int *)arg;
+    ws_server_start(ws_port);
+    return NULL;
+}
 
 int main() {
     Config config;
@@ -26,6 +34,15 @@ int main() {
     }
     logging(INFO, "Database connection established successfully");
 
+    // pthread_t ws_thread;
+    // int ws_port = 8081;
+    // if (pthread_create(&ws_thread, NULL, start_ws_server, &ws_port) != 0) {
+    //     logging(ERROR, "Failed to create WebSocket server thread");
+    //     disconnect_db(db_conn);
+    //     close_logger();
+    //     return EXIT_FAILURE;
+    // }
+
     Server *server = server_init(PORT, db_conn);
     if (!server) {
         logging(ERROR, "Failed to initialize server");
@@ -41,7 +58,6 @@ int main() {
         close_logger();
         return EXIT_FAILURE;
     }
-
     logging(INFO, "Server is running on port %d", PORT);
     logging(INFO, "Press Enter to stop the server...");
 

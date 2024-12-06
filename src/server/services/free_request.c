@@ -1,4 +1,4 @@
-#include "service.h"  // Подключите заголовочный файл, где определена структура RequestData
+#include "service.h"
 #include <stdlib.h>
 
 void free_request_data(void *con_cls) {
