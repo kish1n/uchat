@@ -1,8 +1,11 @@
 #include "service.h"
+#include <libwebsockets.h>
 #include <stdlib.h>
 #include <json-c/json.h>
 #include "../services/service.h"
 #include "../pkg/httputils/httputils.h"
+#include "../pkg/http_response/response.h"
+#include "../pkg/ws/ws.h"
 #include "../services/messenger/messenger.h"
 #include "../db/core/core.h"
 #include "auth/auth_handlers.h"
@@ -40,10 +43,6 @@ enum MHD_Result router(void *cls,
         .con_cls = con_cls,
         .db_conn = db_conn
     };
-
-    if (strcmp(url, "/ws") == 0 && strcmp(method, "GET") == 0) {
-        return handle_websocket_connection(&context);
-    }
 
     if (starts_with(url, "/auth/")) {
         const char *sub_url = url + strlen("/auth");

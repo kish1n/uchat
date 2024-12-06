@@ -82,6 +82,8 @@ add_executable(uchat_auth
         src/server/pkg/ws/remove_client.c
         src/server/pkg/ws/broadcast_message.c
         src/server/pkg/ws/add_client.c
+        src/server/pkg/ws/ws_chat_handler.c
+        src/server/pkg/ws/ws_server_start.c
 
 )
 

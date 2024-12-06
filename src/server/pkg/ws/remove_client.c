@@ -1,27 +1,23 @@
 #include "ws.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
-// Удалить клиента из всех чатов
+// Удаление клиента из массива
 void remove_client(struct lws *wsi) {
-    Chat *chat = active_chats;
+    for (int i = 0; i < client_count; i++) {
+        if (clients[i].wsi == wsi) {
+            logging(INFO, "Removing client: user_id=%s, chat_id=%s", clients[i].user_id, clients[i].chat_id);
 
-    while (chat) {
-        Client **current = &chat->clients;
-
-        while (*current) {
-            if ((*current)->wsi == wsi) {
-                Client *to_remove = *current;
-                *current = (*current)->next;
-                free(to_remove);
-                printf("Client removed from chat_id: %d\n", chat->chat_id);
-                return;
+            // Сдвиг всех последующих клиентов в массиве
+            for (int j = i; j < client_count - 1; j++) {
+                clients[j] = clients[j + 1];
             }
-            current = &((*current)->next);
-        }
 
-        chat = chat->next;
+            client_count--;
+            return;
+        }
     }
+
+    logging(WARN, "Attempted to remove non-existent client");
 }
 

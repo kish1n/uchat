@@ -1,29 +1,25 @@
 #include "ws.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
-// Отправить сообщение всем клиентам в чате
-void broadcast_message(int chat_id, const char *message) {
-    Chat *chat = active_chats;
-
-    // Найти чат
-    while (chat) {
-        if (chat->chat_id == chat_id) {
-            break;
-        }
-        chat = chat->next;
-    }
-
-    if (!chat) {
-        printf("No active clients in chat_id: %d\n", chat_id);
+void broadcast_message(const char *chat_id, const char *message) {
+    if (client_count == 0) {
+        logging(WARN, "No clients connected. Message not broadcasted.");
         return;
     }
 
-    // Отправить сообщение всем клиентам
-    Client *client = chat->clients;
-    while (client) {
-        lws_write(client->wsi, (unsigned char *)message, strlen(message), LWS_WRITE_TEXT);
-        client = client->next;
+    for (int i = 0; i < client_count; i++) {
+        if (strcmp(clients[i].chat_id, chat_id) == 0) {
+            size_t len = strlen(message);
+            unsigned char buffer[LWS_PRE + len];
+            memcpy(&buffer[LWS_PRE], message, len);
+
+            int bytes_written = lws_write(clients[i].wsi, &buffer[LWS_PRE], len, LWS_WRITE_TEXT);
+            if (bytes_written < (int)len) {
+                logging(WARN, "Failed to send complete message to user_id=%s in chat_id=%s", clients[i].user_id, chat_id);
+            } else {
+                logging(INFO, "Message sent to user_id=%s in chat_id=%s", clients[i].user_id, chat_id);
+            }
+        }
     }
+
+    logging(INFO, "Message broadcasted to chat_id=%s: %s", chat_id, message);
 }
