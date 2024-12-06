@@ -11,6 +11,8 @@ admin/log/log.log
 
 # Игнорировать скомпилированные файлы объектных файлов
 *.o
+main.o
+uchat
 
 # Игнорировать главный файл CMakeLists.txt, если он не нужен
 CMakeLists.txt

@@ -18,7 +18,7 @@ SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c") main.c
 OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(OBJ_DIR)/%, $(SRC_FILES:.c=.o))
 
 # Линковка библиотек
-LIBS = -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lwebsockets
+LIBS = -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lwebsockets -lsqlite3 -luuid
 
 # Правило для компиляции всех объектов
 all: $(TARGET)

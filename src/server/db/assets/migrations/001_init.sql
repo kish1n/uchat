@@ -1,31 +1,33 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto; -- for gen_random_uuid()
-
 CREATE TABLE IF NOT EXISTS "users" (
-    "id" UUID PRIMARY KEY NOT NULL,
-    "username" VARCHAR(255) UNIQUE NOT NULL,
-    "passhash" VARCHAR(255) NOT NULL,
-    "created_at" VARCHAR(255) NOT NULL
+   "id" TEXT PRIMARY KEY NOT NULL, -- UUID как TEXT
+   "username" TEXT UNIQUE NOT NULL,
+   "passhash" TEXT NOT NULL,
+   "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP -- Дата создания
 );
 
-CREATE TABLE IF NOT EXISTS chats (
-    "id" SERIAL PRIMARY KEY,
-    "name" VARCHAR(255),
-    "is_group" BOOLEAN NOT NULL DEFAULT FALSE,
-    "created_at" TIMESTAMP DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS "chats" (
+   "id" INTEGER PRIMARY KEY AUTOINCREMENT, -- SERIAL заменён на AUTOINCREMENT
+   "name" TEXT,
+   "is_group" BOOLEAN NOT NULL DEFAULT 0, -- SQLite использует 0/1 для BOOL
+   "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS chat_members (
-    "chat_id" INT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-    "user_id" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    "is_admin" BOOLEAN NOT NULL DEFAULT FALSE,
-    "joined_at" TIMESTAMP DEFAULT NOW(),
-    PRIMARY KEY (chat_id, user_id)
-);
+    "chat_id" INTEGER NOT NULL, -- Ссылается на "chats.id"
+    "user_id" TEXT NOT NULL,    -- Ссылается на "users.id"
+    "is_admin" BOOLEAN NOT NULL DEFAULT 0,
+    "joined_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (chat_id, user_id),
+    FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
 
 CREATE TABLE IF NOT EXISTS messages (
-    "id" SERIAL PRIMARY KEY,
-    "chat_id" INT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
-    "sender_id" UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "chat_id" INTEGER NOT NULL, -- Ссылается на "chats.id"
+    "sender_id" TEXT NOT NULL,  -- Ссылается на "users.id"
     "content" TEXT NOT NULL,
-    "sent_at" TIMESTAMP DEFAULT NOW()
+    "sent_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE SET NULL
 );
