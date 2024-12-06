@@ -1,6 +1,6 @@
 #pragma once
 #include "../../../pkg/config/config.h"
-#include <libpq-fe.h>
+#include <sqlite3.h>
 
 typedef struct {
     int id;
@@ -10,9 +10,9 @@ typedef struct {
     char sent_at[64];
 } Message;
 
-int create_message(PGconn *conn, int chat_id, const char *sender_id, const char *content);
-int delete_message(PGconn *conn, int message_id);
-int get_message_by_id(PGconn *conn, int message_id, Message *message);
-int get_messages_by_chat(PGconn *conn, int chat_id, Message **messages, int *message_count);
-int edit_message(PGconn *conn, int message_id, const char *new_content);
-int message_exists(PGconn *conn, int message_id);
+int create_message(sqlite3 *db, int chat_id, const char *sender_id, const char *content);
+int delete_message(sqlite3 *db, int message_id);
+int get_message_by_id(sqlite3 *db, int message_id, Message *message);
+int get_messages_by_chat(sqlite3 *db, int chat_id, Message **messages, int *message_count);
+int edit_message(sqlite3 *db, int message_id, const char *new_content);
+int message_exists(sqlite3 *db, int message_id);

@@ -4,42 +4,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-int get_messages_by_chat(PGconn *conn, int chat_id, Message **messages, int *message_count) {
-    if (!conn || chat_id <= 0 || !messages || !message_count) {
-        fprintf(stderr, "Invalid parameters for get_messages_by_chat\n");
+int get_messages_by_chat(sqlite3 *db, int chat_id, Message **messages, int *message_count) {
+    const char *query = "SELECT id, chat_id, sender_id, content, sent_at FROM messages WHERE chat_id = ? ORDER BY sent_at";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    const char *query =
-        "SELECT id, chat_id, sender_id, content, sent_at "
-        "FROM messages WHERE chat_id = $1 ORDER BY sent_at ASC";
-    const char *paramValues[1];
-    char chat_id_str[12];
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[0] = chat_id_str;
+    sqlite3_bind_int(stmt, 1, chat_id);
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error fetching messages by chat: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    int count = 0;
+    Message *temp_messages = malloc(sizeof(Message) * 100); // Предполагаем максимум 100 сообщений
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        temp_messages[count].id = sqlite3_column_int(stmt, 0);
+        temp_messages[count].chat_id = sqlite3_column_int(stmt, 1);
+        strncpy(temp_messages[count].sender_id, (const char *)sqlite3_column_text(stmt, 2), sizeof(temp_messages[count].sender_id) - 1);
+        strncpy(temp_messages[count].content, (const char *)sqlite3_column_text(stmt, 3), sizeof(temp_messages[count].content) - 1);
+        strncpy(temp_messages[count].sent_at, (const char *)sqlite3_column_text(stmt, 4), sizeof(temp_messages[count].sent_at) - 1);
+        count++;
     }
 
-    int rows = PQntuples(res);
-    *messages = malloc(rows * sizeof(Message));
-    *message_count = rows;
+    sqlite3_finalize(stmt);
 
-    for (int i = 0; i < rows; i++) {
-        (*messages)[i].id = atoi(PQgetvalue(res, i, 0));
-        (*messages)[i].chat_id = atoi(PQgetvalue(res, i, 1));
-        strncpy((*messages)[i].sender_id, PQgetvalue(res, i, 2), sizeof((*messages)[i].sender_id) - 1);
-        (*messages)[i].sender_id[sizeof((*messages)[i].sender_id) - 1] = '\0';
-        strncpy((*messages)[i].content, PQgetvalue(res, i, 3), sizeof((*messages)[i].content) - 1);
-        (*messages)[i].content[sizeof((*messages)[i].content) - 1] = '\0';
-        strncpy((*messages)[i].sent_at, PQgetvalue(res, i, 4), sizeof((*messages)[i].sent_at) - 1);
-        (*messages)[i].sent_at[sizeof((*messages)[i].sent_at) - 1] = '\0';
-    }
+    *messages = temp_messages;
+    *message_count = count;
 
-    PQclear(res);
     return 0;
 }

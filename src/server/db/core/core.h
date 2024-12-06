@@ -1,11 +1,16 @@
 #ifndef DB_H
 #define DB_H
 
-#include <libpq-fe.h>
+#include <sqlite3.h>
 #include "../../pkg/config/config.h"
 
-PGconn* connect_db(const char *connection_string);
-void disconnect_db(PGconn *conn);
-int execute_migration(PGconn *conn, const char *filename);
+extern sqlite3 *db;
+
+int create_tables();
+int execute_sql(const char *sql);
+void generate_uuid(char *uuid_str);
+int init_db(const char *db_file);
+void close_db();
+sqlite3 *get_db();
 
 #endif // DB_H

@@ -25,11 +25,12 @@ enum MHD_Result router(void *cls,
         return EXIT_FAILURE;
     }
 
-    PGconn *db_conn = connect_db(config.database.url);
-    if (db_conn == NULL || PQstatus(db_conn) != CONNECTION_OK) {
-        logging(ERROR, "Failed to connect to database: %s", PQerrorMessage(db_conn));
-        if (db_conn) disconnect_db(db_conn);
-        return EXIT_FAILURE;
+    if (!db) {
+        if (init_db("uchat.db") != SQLITE_OK) {
+            logging(ERROR, "Failed to initialize database");
+            return EXIT_FAILURE;
+        }
+        db = get_db();
     }
 
     HttpContext context = {
@@ -41,7 +42,7 @@ enum MHD_Result router(void *cls,
         .upload_data = upload_data,
         .upload_data_size = upload_data_size,
         .con_cls = con_cls,
-        .db_conn = db_conn
+        .db_conn = db
     };
 
     if (starts_with(url, "/auth/")) {

@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <libpq-fe.h>
+#include <sqlite3.h>
+
 #include "../http_response/response.h"
 
 typedef enum {
@@ -48,7 +50,7 @@ typedef struct {
     const char *upload_data;
     size_t *upload_data_size;
     void **con_cls;
-    PGconn *db_conn;
+    sqlite3 *db_conn;
 } HttpContext;
 
 int load_config(const char *filename, Config *config);

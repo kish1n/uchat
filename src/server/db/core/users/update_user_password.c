@@ -3,17 +3,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int update_user_password(PGconn *conn, const char *uuid, const char *new_passhash) {
-    const char *query = "UPDATE users SET passhash = $1 WHERE id = $2;";
-    const char *paramValues[2] = {new_passhash, uuid};
+int update_user_password(sqlite3 *db, const char *uuid, const char *new_passhash) {
+    const char *query = "UPDATE users SET passhash = ? WHERE id = ?";
 
-    PGresult *res = PQexecParams(conn, query, 2, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Error updating user password");
-        PQclear(res);
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    PQclear(res);
+    sqlite3_bind_text(stmt, 1, new_passhash, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, uuid, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    sqlite3_finalize(stmt);
     return 0;
 }

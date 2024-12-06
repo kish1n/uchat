@@ -4,42 +4,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-int get_message_by_id(PGconn *conn, int message_id, Message *message) {
-    if (!conn || message_id <= 0 || !message) {
-        fprintf(stderr, "Invalid parameters for get_message_by_id\n");
+int get_message_by_id(sqlite3 *db, int message_id, Message *message) {
+    const char *query = "SELECT id, chat_id, sender_id, content, sent_at FROM messages WHERE id = ?";
+
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    const char *query =
-        "SELECT id, chat_id, sender_id, content, sent_at "
-        "FROM messages WHERE id = $1";
-    const char *paramValues[1];
-    char message_id_str[12];
-    snprintf(message_id_str, sizeof(message_id_str), "%d", message_id);
-    paramValues[0] = message_id_str;
+    sqlite3_bind_int(stmt, 1, message_id);
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error fetching message: %s\n", PQerrorMessage(conn));
-        PQclear(res);
-        return -1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        message->id = sqlite3_column_int(stmt, 0);
+        message->chat_id = sqlite3_column_int(stmt, 1);
+        strncpy(message->sender_id, (const char *)sqlite3_column_text(stmt, 2), sizeof(message->sender_id) - 1);
+        strncpy(message->content, (const char *)sqlite3_column_text(stmt, 3), sizeof(message->content) - 1);
+        strncpy(message->sent_at, (const char *)sqlite3_column_text(stmt, 4), sizeof(message->sent_at) - 1);
+
+        sqlite3_finalize(stmt);
+        return 0;
     }
 
-    if (PQntuples(res) == 0) {
-        fprintf(stderr, "Message not found: ID %d\n", message_id);
-        PQclear(res);
-        return -1;
-    }
-
-    message->id = atoi(PQgetvalue(res, 0, 0));
-    message->chat_id = atoi(PQgetvalue(res, 0, 1));
-    strncpy(message->sender_id, PQgetvalue(res, 0, 2), sizeof(message->sender_id) - 1);
-    message->sender_id[sizeof(message->sender_id) - 1] = '\0';
-    strncpy(message->content, PQgetvalue(res, 0, 3), sizeof(message->content) - 1);
-    message->content[sizeof(message->content) - 1] = '\0';
-    strncpy(message->sent_at, PQgetvalue(res, 0, 4), sizeof(message->sent_at) - 1);
-    message->sent_at[sizeof(message->sent_at) - 1] = '\0';
-
-    PQclear(res);
-    return 0;
+    sqlite3_finalize(stmt);
+    return -1;
 }

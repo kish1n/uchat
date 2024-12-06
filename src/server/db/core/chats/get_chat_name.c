@@ -1,24 +1,27 @@
+#include "chats.h"
+#include <sqlite3.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "chats.h"
-#include "../../../pkg/config/config.h"
+int get_chat_name(sqlite3 *db, int chat_id, char *chat_name, size_t chat_name_size) {
+    const char *query = "SELECT name FROM chats WHERE id = ?";
 
-int get_chat_name(PGconn *conn, int chat_id, char *chat_name, size_t chat_name_size) {
-    const char *query = "SELECT name FROM chats WHERE id = $1";
-    const char *paramValues[1];
-    char chat_id_str[12];
-    snprintf(chat_id_str, sizeof(chat_id_str), "%d", chat_id);
-    paramValues[0] = chat_id_str;
-
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK || PQntuples(res) == 0) {
-        PQclear(res);
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
-    strncpy(chat_name, PQgetvalue(res, 0, 0), chat_name_size - 1);
-    chat_name[chat_name_size - 1] = '\0';
-    PQclear(res);
-    return 0;
+    sqlite3_bind_int(stmt, 1, chat_id);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        strncpy(chat_name, (const char *)sqlite3_column_text(stmt, 0), chat_name_size - 1);
+        chat_name[chat_name_size - 1] = '\0';
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    sqlite3_finalize(stmt);
+    return -1;
 }

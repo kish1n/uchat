@@ -1,7 +1,7 @@
-#ifndef USER_H
-#define USER_H
+#ifndef USERS_H
+#define USERS_H
 
-#include <libpq-fe.h>
+#include <sqlite3.h>
 
 typedef struct {
     char *id;
@@ -10,14 +10,14 @@ typedef struct {
     char *created_at;
 } User;
 
-User* get_user_by_uuid(PGconn *conn, const char *uuid);
-User* get_user_by_username(PGconn *conn, const char *username);
+User* get_user_by_uuid(sqlite3 *db, const char *uuid);
+User* get_user_by_username(sqlite3 *db, const char *username);
 void free_user(User *user);
 
-int create_user(PGconn *conn, const char *username, const char *passhash);
-int update_user_password(PGconn *conn, const char *uuid, const char *new_passhash);
-int update_user_username(PGconn *conn, const char *uuid, const char *new_username);
-int delete_user(PGconn *conn, const char *uuid);
-int check_user_credentials(PGconn *conn, const char *username, const char *password);
+int create_user(sqlite3 *db, const char *username, const char *passhash);
+int update_user_password(sqlite3 *db, const char *uuid, const char *new_passhash);
+int update_user_username(sqlite3 *db, const char *uuid, const char *new_username);
+int delete_user(sqlite3 *db, const char *uuid);
+int check_user_credentials(sqlite3 *db, const char *username, const char *password);
 
-#endif // USER_H
+#endif // USERS_H

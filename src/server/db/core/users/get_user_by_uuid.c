@@ -5,35 +5,26 @@
 
 #include "../../../pkg/config/config.h"
 
-User* get_user_by_uuid(PGconn *conn, const char *uuid) {
-    const char *query = "SELECT id, username, passhash, created_at FROM users WHERE id = $1;";
-    const char *paramValues[1] = {uuid};
+User* get_user_by_uuid(sqlite3 *db, const char *uuid) {
+    const char *query = "SELECT id, username, passhash, created_at FROM users WHERE id = ?";
 
-    PGresult *res = PQexecParams(conn, query, 1, NULL, paramValues, NULL, NULL, 0);
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Error fetching user");
-        PQclear(res);
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
         return NULL;
     }
 
-    if (PQntuples(res) == 0) {
-        fprintf(stderr, "No user found with UUID");
-        PQclear(res);
-        return NULL;
+    sqlite3_bind_text(stmt, 1, uuid, -1, SQLITE_STATIC);
+
+    User *user = NULL;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        user = malloc(sizeof(User));
+        user->id = strdup((const char *)sqlite3_column_text(stmt, 0));
+        user->username = strdup((const char *)sqlite3_column_text(stmt, 1));
+        user->passhash = strdup((const char *)sqlite3_column_text(stmt, 2));
+        user->created_at = strdup((const char *)sqlite3_column_text(stmt, 3));
     }
 
-    User *user = malloc(sizeof(User));
-    if (!user) {
-        fprintf(stderr, "Failed to allocate memory for user");
-        PQclear(res);
-        return NULL;
-    }
-
-    user->id = strdup(PQgetvalue(res, 0, 0));
-    user->username = strdup(PQgetvalue(res, 0, 1));
-    user->passhash = strdup(PQgetvalue(res, 0, 2));
-    user->created_at = strdup(PQgetvalue(res, 0, 3));
-
-    PQclear(res);
+    sqlite3_finalize(stmt);
     return user;
 }
