@@ -12,7 +12,7 @@ include_directories(${YAML_INCLUDE_DIRS} /usr/include/postgresql)
 link_directories(/usr/lib/x86_64-linux-gnu)
 
 add_executable(uchat_auth
-        main.c
+        src/server/main.c
 
         src/server/db/core/core.h
         src/server/db/core/users/delete_user.c

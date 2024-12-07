@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sqlite3.h>
-#include "src/server/services/service.h"
-#include "src/server/db/core/core.h"
-#include "src/server/pkg/config/config.h"
+#include "services/service.h"
+#include "db/core/core.h"
+#include "pkg/config/config.h"
 
 // Signal handler
 volatile sig_atomic_t stop_server = 0;
