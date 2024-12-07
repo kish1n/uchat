@@ -24,6 +24,6 @@ int create_chat(sqlite3 *db, const char *chat_name, int is_group) {
     }
 
     sqlite3_finalize(stmt);
-    
+
     return (int)sqlite3_last_insert_rowid(db);
 }

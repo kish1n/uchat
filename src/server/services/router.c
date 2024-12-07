@@ -124,6 +124,22 @@ enum MHD_Result router(void *cls,
             }
         }
 
+        if (starts_with(sub_url, "/poll/") && strcmp(method, "GET") == 0) {
+            const char *id_str = sub_url + strlen("/poll/");
+            int chat_id = atoi(id_str);
+
+            if (chat_id > 0) {
+                return handle_long_polling(&context, connection, chat_id);
+            } else {
+                const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
+                struct MHD_Response *response = MHD_create_response_from_buffer(
+                    strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+                int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+                MHD_destroy_response(response);
+                return ret;
+            }
+        }
+
     } else if (starts_with(url, "/user/")) {
         const char *sub_url = url + strlen("/user");
 

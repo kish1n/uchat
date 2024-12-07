@@ -14,7 +14,9 @@ int create_tables() {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT, "
         "is_group BOOLEAN NOT NULL DEFAULT 0, "
-        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+        "last_message_id INTEGER DEFAULT NULL, "
+        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+        "FOREIGN KEY (last_message_id) REFERENCES messages (id) ON DELETE SET NULL"
         ");";
 
     const char *create_chat_members =
@@ -43,6 +45,7 @@ int create_tables() {
     if (execute_sql(create_chats) != 0) return -1;
     if (execute_sql(create_chat_members) != 0) return -1;
     if (execute_sql(create_messages) != 0) return -1;
+    if (execute_sql("PRAGMA journal_mode=WAL;") != 0) return -1;
 
     return 0;
 }

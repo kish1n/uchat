@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    daemonize();
+    //daemonize();
 
     Config config;
     if (load_config("config.yaml", &config) != 0) {
@@ -102,16 +102,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     logging(INFO, "Database tables created successfully");
-
-    // WebSocket-related code commented out for now
-    // pthread_t ws_thread;
-    // int ws_port = 8081;
-    // if (pthread_create(&ws_thread, NULL, start_ws_server, &ws_port) != 0) {
-    //     logging(ERROR, "Failed to create WebSocket server thread");
-    //     close_db();
-    //     close_logger();
-    //     return EXIT_FAILURE;
-    // }
 
     Server *server = server_init(port, NULL); // Pass NULL for db_conn since it's SQLite now
     if (!server) {

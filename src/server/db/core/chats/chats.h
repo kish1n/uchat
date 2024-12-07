@@ -1,6 +1,6 @@
 #ifndef CHATS_H
 #define CHATS_H
-
+#include "../../../pkg/config/config.h"
 #include <sqlite3.h>
 #include <stddef.h>
 
@@ -8,6 +8,7 @@ typedef struct {
     int id;
     char name[255];
     int is_group;
+    int last_message_id;
     char created_at[64];
 } Chat;
 

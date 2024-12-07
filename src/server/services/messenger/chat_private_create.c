@@ -73,10 +73,21 @@ int handle_create_private_chat(HttpContext *context) {
     User *creator = get_user_by_username(context->db_conn, cretaor_username);
     User *second_user = get_user_by_username(context->db_conn, with_user);
 
-    free(cretaor_username);
+    if (second_user == NULL || creator == NULL) {
+        logging(ERROR, "Failed to get user by username");
+        const char *error_msg = create_error_response("Failed to get user by username", STATUS_INTERNAL_SERVER_ERROR);
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    }
+
+    logging(DEBUG, "Creator: %s, Second user: %s", creator->username, second_user->username);
 
     if (!second_user->id) {
-        logging(ERROR, "User with username '%s' not found", with_user);
+        logging(ERROR, "User with username '%s' not found", second_user->username);
         const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
@@ -85,6 +96,8 @@ int handle_create_private_chat(HttpContext *context) {
         json_object_put(parsed_json);
         return ret;
     }
+
+    logging(INFO, "User with username '%s' found", second_user->username);
 
     int chat_id = private_chat_exist(context->db_conn, creator->id, second_user->id);
     if (chat_id == -1) {
@@ -105,6 +118,8 @@ int handle_create_private_chat(HttpContext *context) {
         json_object_put(parsed_json);
         return ret;
     }
+
+    logging(INFO, "Creating private chat between '%s' and '%s'", creator->username, second_user->username);
 
     char *chat_name = malloc(strlen("private_") + strlen(creator->username) + strlen(second_user->username) + 2);
     if (!chat_name) {

@@ -16,3 +16,6 @@ int get_message_by_id(sqlite3 *db, int message_id, Message *message);
 int get_messages_by_chat(sqlite3 *db, int chat_id, Message **messages, int *message_count);
 int edit_message(sqlite3 *db, int message_id, const char *new_content);
 int message_exists(sqlite3 *db, int message_id);
+int get_new_messages_by_chat(sqlite3 *db, int chat_id, int last_message_id, Message **messages, int *message_count);
+int get_last_message_id(sqlite3 *db, int chat_id);
+int edit_last_message_id(sqlite3 *db, int chat_id, int message_id);
