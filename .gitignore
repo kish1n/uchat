@@ -13,6 +13,7 @@ admin/log/log.log
 *.o
 main.o
 uchat
+client_app
 
 # Игнорировать главный файл CMakeLists.txt, если он не нужен
 CMakeLists.txt
