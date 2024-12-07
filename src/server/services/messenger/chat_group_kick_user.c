@@ -129,7 +129,7 @@ int handle_remove_member_from_chat(HttpContext *context) {
     }
 
     // Remove the user from the chat
-    if (delete_user_from_chat(context->db_conn, chat_id, target_user->id) != 1) {
+    if (delete_user_from_chat(context->db_conn, chat_id, target_user->id) != 0) {
         logging(ERROR, "Failed to remove user '%s' from chat ID '%d'", username, chat_id);
         const char *error_msg = create_error_response("Failed to remove user from chat", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
