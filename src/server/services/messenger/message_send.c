@@ -126,6 +126,7 @@ int handle_send_message(HttpContext *context) {
         return ret;
     }
 
+    logging(DEBUG, "User '%s' is in chat ID '%d'", sender->username, chat_id);
     // Save message to database
     int result = create_message(context->db_conn, chat_id, sender->id, content);
     json_object_put(parsed_json);

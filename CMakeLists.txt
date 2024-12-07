@@ -91,6 +91,9 @@ add_executable(uchat_auth
         src/server/db/core/create_tables.c
         src/server/db/core/execute_sql.c
         src/server/services/messenger/handle_long_polling.c
+        src/server/db/core/messages/get_new_messages_by_chat.c
+        src/server/db/core/messages/get_last_message_id.c
+        src/server/db/core/messages/edit_last_message_id.c
 
 )
 

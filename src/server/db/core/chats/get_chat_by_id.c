@@ -5,7 +5,7 @@
 #include <string.h>
 
 int get_chat_by_id(sqlite3 *db, int chat_id, Chat *chat) {
-    const char *query = "SELECT id, name, is_group, created_at FROM chats WHERE id = ?";
+    const char *query = "SELECT id, name, is_group, last_message_id, created_at FROM chats WHERE id = ?";
 
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
@@ -20,7 +20,8 @@ int get_chat_by_id(sqlite3 *db, int chat_id, Chat *chat) {
         strncpy(chat->name, (const char *)sqlite3_column_text(stmt, 1), sizeof(chat->name) - 1);
         chat->name[sizeof(chat->name) - 1] = '\0';
         chat->is_group = sqlite3_column_int(stmt, 2);
-        strncpy(chat->created_at, (const char *)sqlite3_column_text(stmt, 3), sizeof(chat->created_at) - 1);
+        chat->last_message_id = sqlite3_column_int(stmt, 3); // Новое поле
+        strncpy(chat->created_at, (const char *)sqlite3_column_text(stmt, 4), sizeof(chat->created_at) - 1);
         chat->created_at[sizeof(chat->created_at) - 1] = '\0';
 
         sqlite3_finalize(stmt);

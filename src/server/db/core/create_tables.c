@@ -14,7 +14,9 @@ int create_tables() {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "name TEXT, "
         "is_group BOOLEAN NOT NULL DEFAULT 0, "
-        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+        "last_message_id INTEGER DEFAULT NULL, "
+        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+        "FOREIGN KEY (last_message_id) REFERENCES messages (id) ON DELETE SET NULL"
         ");";
 
     const char *create_chat_members =
