@@ -1,6 +1,6 @@
 #ifndef CHATS_H
 #define CHATS_H
-
+#include "../../../pkg/config/config.h"
 #include <sqlite3.h>
 #include <stddef.h>
 

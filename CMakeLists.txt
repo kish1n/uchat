@@ -90,6 +90,7 @@ add_executable(uchat_auth
         src/server/db/core/generate_uuid.c
         src/server/db/core/create_tables.c
         src/server/db/core/execute_sql.c
+        src/server/services/messenger/handle_long_polling.c
 
 )
 
