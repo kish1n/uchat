@@ -45,6 +45,7 @@ int create_tables() {
     if (execute_sql(create_chats) != 0) return -1;
     if (execute_sql(create_chat_members) != 0) return -1;
     if (execute_sql(create_messages) != 0) return -1;
+    if (execute_sql("PRAGMA journal_mode=WAL;") != 0) return -1;
 
     return 0;
 }

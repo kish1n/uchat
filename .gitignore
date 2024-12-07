@@ -14,6 +14,8 @@ admin/log/log.log
 main.o
 uchat
 uchat.db
+uchat.db-shm
+uchat.db-wal
 
 # Игнорировать главный файл CMakeLists.txt, если он не нужен
 CMakeLists.txt
