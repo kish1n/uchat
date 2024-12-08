@@ -8,6 +8,7 @@
 #include "../../pkg/httputils/httputils.h"
 #include "../../pkg/jwt_utils/jwt_utils.h"
 #include "../../db/core/users/users.h"
+#include "../../db/core/messages/messages.h"
 
 int handle_delete_chat(HttpContext *context) {
     Config cfg;
@@ -109,12 +110,14 @@ int handle_delete_chat(HttpContext *context) {
 
 
     // Delete the chat from the database
-    int result = delete_chat(context->db_conn, chat_id);
+    int result1 = delete_chat(context->db_conn, chat_id);
+    int result2 = delete_all_chat_members(context->db_conn, chat_id);
+    int result3 = delete_all_messages_in_chat(context->db_conn, chat_id);
 
     json_object_put(parsed_json);
     free(username);
 
-    if (result == 0) {
+    if (result1 == 0 && result2 == 0 && result3 == 0) {
         const char *success_msg = create_response("Successfully deleted chat", STATUS_OK);
         struct MHD_Response *response = MHD_create_response_from_buffer(
             strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);

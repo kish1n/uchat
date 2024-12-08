@@ -16,5 +16,6 @@ int get_chat_members(sqlite3 *db, int chat_id, ChatMember **members, int *member
 int is_user_in_chat(sqlite3 *db, int chat_id, const char *user_id);
 int is_user_admin(sqlite3 *db, int chat_id, const char *user_id);
 int delete_user_from_chat(sqlite3 *db, int chat_id, const char *user_id);
+int delete_all_chat_members(sqlite3 *db, int chat_id);
 
 #endif // CHAT_MEMBERS_H
