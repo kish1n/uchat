@@ -43,7 +43,7 @@ int handle_delete_message(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -56,12 +56,12 @@ int handle_delete_message(HttpContext *context) {
 
     // Validate required fields
     if (message_id <= 0) {
-        return prepare_response("Missing or invalid 'id' in request", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Missing or invalid 'id' in request", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     // Check if the message exists
     if (!message_exists(context->db_conn, message_id)) {
-        return prepare_response("Message does not exist", STATUS_NOT_FOUND, parsed_json, context);
+        return prepare_simple_response("Message does not exist", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     // Delete the message from the database
@@ -71,10 +71,10 @@ int handle_delete_message(HttpContext *context) {
 
     if (result != 0) {
         logging(ERROR, "Failed to delete message %d", message_id);
-        return prepare_response("Failed to delete message", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
+        return prepare_simple_response("Failed to delete message", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
 
     logging(INFO, "Message %d deleted successfully", message_id);
 
-    return prepare_response("Successfully deleted message", STATUS_OK, NULL, context);
+    return prepare_simple_response("Successfully deleted message", STATUS_OK, NULL, context);
 }

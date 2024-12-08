@@ -23,7 +23,7 @@ typedef enum {
     STATUS_INTERNAL_SERVER_ERROR = 500,
 } STATUS_CODE;
 
-int prepare_response(const char *error_msg, const STATUS_CODE status_code, json_object *json_data, HttpContext *context);
+int prepare_simple_response(const char *error_msg, const STATUS_CODE status_code, json_object *json_data, HttpContext *context);
 
 /**
  * Creates an HTTP response in JSON format.
@@ -42,5 +42,5 @@ char* create_response(const char *msg, STATUS_CODE status_code);
  * @return A dynamically allocated string containing the error response. Caller must free it.
  */
 char* create_error_response(const char *error_msg, STATUS_CODE status_code);
-
+int prepare_response(const STATUS_CODE status_code,  json_object *json_data, HttpContext *context);
 #endif // RESPONSE_H

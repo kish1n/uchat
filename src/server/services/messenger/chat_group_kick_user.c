@@ -40,7 +40,7 @@ int handle_remove_member_from_chat(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -59,14 +59,14 @@ int handle_remove_member_from_chat(HttpContext *context) {
 
     // Validate required fields
     if (chat_id <= 0 || !username || strlen(username) == 0) {
-        return prepare_response("Missing or invalid 'chat_id' or 'username'", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Missing or invalid 'chat_id' or 'username'", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     char *sender = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &sender) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *admin_user = get_user_by_username(context->db_conn, sender);
@@ -75,20 +75,20 @@ int handle_remove_member_from_chat(HttpContext *context) {
     if (!is_user_in_chat(context->db_conn, chat_id, admin_user->id) ||
         !is_user_admin(context->db_conn, chat_id, admin_user->id)) {
         logging(ERROR, "User '%s' is not an admin in chat ID '%d'", admin_user->username, chat_id);
-        return prepare_response("User is not an admin in the chat", STATUS_FORBIDDEN, parsed_json, context);
+        return prepare_simple_response("User is not an admin in the chat", STATUS_FORBIDDEN, parsed_json, context);
     }
 
     // Find the user to be removed by username
     User *target_user = get_user_by_username(context->db_conn, username);
     if (!target_user || !target_user->id) {
         logging(ERROR, "User '%s' not found", username);
-        return prepare_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     // Prevent admin from kicking themselves
     if (strcmp(admin_user->id, target_user->id) == 0) {
         logging(ERROR, "Admin '%s' tried to remove themselves from chat ID '%d'", admin_user->username, chat_id);
-        int ret = prepare_response("Admin cannot remove themselves", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("Admin cannot remove themselves", STATUS_FORBIDDEN, parsed_json, context);
 
         free_user(target_user);
         free_user(admin_user);
@@ -100,7 +100,7 @@ int handle_remove_member_from_chat(HttpContext *context) {
     // Remove the user from the chat
     if (delete_user_from_chat(context->db_conn, chat_id, target_user->id) != 0) {
         logging(ERROR, "Failed to remove user '%s' from chat ID '%d'", username, chat_id);
-        int ret = prepare_response("Admin cannot remove themselves", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("Admin cannot remove themselves", STATUS_FORBIDDEN, parsed_json, context);
 
         free(sender);
         free_user(target_user);
@@ -110,7 +110,7 @@ int handle_remove_member_from_chat(HttpContext *context) {
     }
 
     // Successful response
-    int ret = prepare_response("User removed from chat", STATUS_OK, parsed_json, context);
+    int ret = prepare_simple_response("User removed from chat", STATUS_OK, parsed_json, context);
 
     logging(INFO, "User '%s' removed from chat ID '%d' by admin '%s'", username, chat_id, admin_user->username);
 

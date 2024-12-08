@@ -40,7 +40,7 @@ int handle_leave_chat(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -54,21 +54,21 @@ int handle_leave_chat(HttpContext *context) {
 
     // Validate required fields
     if (chat_id <= 0) {
-        return prepare_response("Missing or invalid 'chat_id'", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Missing or invalid 'chat_id'", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     char *sender = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &sender) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *user = get_user_by_username(context->db_conn, sender);
 
     // Check if the user is in the chat
     if (!is_user_in_chat(context->db_conn, chat_id, user->id)) {
-        int ret = prepare_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
 
         free_user(user);
         free(sender);
@@ -79,7 +79,7 @@ int handle_leave_chat(HttpContext *context) {
     // Check if the user is the admin
     if (is_user_admin(context->db_conn, chat_id, user->id)) {
         logging(ERROR, "Admin '%s' cannot leave the chat", user->username);
-        int ret = prepare_response("Admin cannot leave the chat", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("Admin cannot leave the chat", STATUS_FORBIDDEN, parsed_json, context);
         free_user(user);
         free(sender);
         return ret;
@@ -88,14 +88,14 @@ int handle_leave_chat(HttpContext *context) {
     // Remove the user from the chat
     if (delete_user_from_chat(context->db_conn, chat_id, user->id) != 0) {
         logging(ERROR, "Failed to remove user '%s' from chat ID '%d'", user->username, chat_id);
-        int ret = prepare_response("Failed to leave the chat", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+        int ret = prepare_simple_response("Failed to leave the chat", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
         free_user(user);
         free(sender);
         return ret;
     }
 
     // Successful response
-    int ret = prepare_response("User left the chat", STATUS_OK, parsed_json, context);
+    int ret = prepare_simple_response("User left the chat", STATUS_OK, parsed_json, context);
 
     logging(INFO, "User '%s' left chat ID '%d'", user->username, chat_id);
 

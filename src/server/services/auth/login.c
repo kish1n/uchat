@@ -36,7 +36,7 @@ int handle_login(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Failed to parse JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Failed to parse JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
     // Extract username and password
@@ -51,18 +51,18 @@ int handle_login(HttpContext *context) {
     }
 
     if (!username || !password) {
-        return prepare_response("Missing 'username' or 'password' in request", STATUS_BAD_REQUEST,  parsed_json, context);
+        return prepare_simple_response("Missing 'username' or 'password' in request", STATUS_BAD_REQUEST,  parsed_json, context);
     }
 
     // Check user credentials (pseudo code for database verification)
     if (!check_user_credentials(context->db_conn, username, password)) {
-        return prepare_response("Invalid username or password", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid username or password", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     // Generate JWT token
     char *token = generate_jwt(username, cfg.security.jwt_secret, 3600);
     if (!token) {
-        return prepare_response("Failed to generate JWT token", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+        return prepare_simple_response("Failed to generate JWT token", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
     }
 
     // Create success response

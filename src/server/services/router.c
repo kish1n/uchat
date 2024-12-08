@@ -73,19 +73,14 @@ enum MHD_Result router(void *cls,
         if (chat_id > 0) {
             context.url = id_str;
             return handle_get_chat_history(&context); //GET
-        } else {
-            const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
-            struct MHD_Response *response = MHD_create_response_from_buffer(
-                strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-            int ret = MHD_queue_response(context.connection, MHD_HTTP_BAD_REQUEST, response);
-            MHD_destroy_response(response);
-            return ret;
         }
+
+        return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, &context);
 
     } else if (starts_with(url, "/chats/")) {
         const char *sub_url = url + strlen("/chats");
 
-        if (strcmp(sub_url, "/create") == 0 && strcmp(method, "POST") == 0) {
+        if (strcmp(sub_url, "/create_private") == 0 && strcmp(method, "POST") == 0) {
             return handle_create_private_chat(&context); //{"with_user": "username"}
         }
         if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
@@ -114,14 +109,10 @@ enum MHD_Result router(void *cls,
             if (chat_id > 0) {
                 context.url = id_str;
                 return handle_get_chat_info(&context);
-            } else {
-                const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
-                struct MHD_Response *response = MHD_create_response_from_buffer(
-                    strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-                int ret = MHD_queue_response(context.connection, MHD_HTTP_BAD_REQUEST, response);
-                MHD_destroy_response(response);
-                return ret;
             }
+
+            return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, &context);
+
         }
 
         if (starts_with(sub_url, "/poll/") && strcmp(method, "GET") == 0) {
@@ -130,14 +121,10 @@ enum MHD_Result router(void *cls,
 
             if (chat_id > 0) {
                 return handle_long_polling(&context, connection, chat_id);
-            } else {
-                const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
-                struct MHD_Response *response = MHD_create_response_from_buffer(
-                    strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-                int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
-                MHD_destroy_response(response);
-                return ret;
             }
+
+            return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, &context);
+
         }
 
     } else if (starts_with(url, "/user/")) {
@@ -148,10 +135,5 @@ enum MHD_Result router(void *cls,
         }
     }
 
-    const char *error_msg = create_error_response("Endpoint not found", STATUS_NOT_FOUND);
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
-    MHD_destroy_response(response);
-    return ret;
+    return prepare_simple_response("Endpoint not found", STATUS_NOT_FOUND, NULL, &context);
 }

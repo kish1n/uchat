@@ -15,7 +15,7 @@ int handle_logout(HttpContext *context) {
     char *user_id = NULL;
     int auth_status = validate_auth_token(context, &user_id);
     if (auth_status != MHD_HTTP_OK) {
-        return prepare_response("Invalid or missing token", STATUS_UNAUTHORIZED, NULL, context);
+        return prepare_simple_response("Invalid or missing token", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     // Logout logic (e.g., invalidate the token in a token blacklist, if implemented)
@@ -24,5 +24,5 @@ int handle_logout(HttpContext *context) {
 
     free(user_id);
 
-    return prepare_response("Successfully logged out", STATUS_OK, NULL, context);
+    return prepare_simple_response("Successfully logged out", STATUS_OK, NULL, context);
 }

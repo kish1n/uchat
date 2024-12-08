@@ -41,7 +41,7 @@ int handle_send_message(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -73,7 +73,7 @@ int handle_send_message(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *sender = get_user_by_username(context->db_conn, username);
@@ -81,7 +81,7 @@ int handle_send_message(HttpContext *context) {
 
     if (!sender) {
         logging(ERROR, "User not found: %s", username);
-        return prepare_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     // Check if chat exists
@@ -89,7 +89,7 @@ int handle_send_message(HttpContext *context) {
         logging(ERROR, "Chat does not exist: %d", chat_id);
         free_user(sender);
 
-        return prepare_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     // Check if user is part of the chat
@@ -97,7 +97,7 @@ int handle_send_message(HttpContext *context) {
         logging(ERROR, "User '%s' is not in chat ID '%d'", sender->username, chat_id);
         free_user(sender);
 
-        return prepare_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
+        return prepare_simple_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
     }
 
     logging(DEBUG, "User '%s' is in chat ID '%d'", sender->username, chat_id);
@@ -109,11 +109,11 @@ int handle_send_message(HttpContext *context) {
         logging(ERROR, "Failed to create message");
 
         free_user(sender);
-        return prepare_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
+        return prepare_simple_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
     }
 
     logging(INFO, "Message sent by user '%s' in chat ID '%d'", sender->username, chat_id);
     free_user(sender);
 
-    return prepare_response("Successfully sent message", STATUS_OK, NULL, context);
+    return prepare_simple_response("Successfully sent message", STATUS_OK, NULL, context);
 }

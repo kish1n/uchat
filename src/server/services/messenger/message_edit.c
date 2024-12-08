@@ -57,7 +57,7 @@ int handle_edit_message(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -75,27 +75,27 @@ int handle_edit_message(HttpContext *context) {
 
     if (message_id <= 0 || !new_content || strlen(new_content) == 0) {
         logging(ERROR, "Invalid fields in request");
-        return prepare_response("Invalid fields in request", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Invalid fields in request", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     char *username = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *user = get_user_by_username(context->db_conn, username);
     free(username);
     if (!user) {
         logging(ERROR, "User not found");
-        return prepare_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     Message message;
     if (get_message_by_id(context->db_conn, message_id, &message) != 0) {
         logging(ERROR, "Message not found");
-        int ret = prepare_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
+        int ret = prepare_simple_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
 
         free_user(user);
         return ret;
@@ -103,7 +103,7 @@ int handle_edit_message(HttpContext *context) {
 
     if (!is_user_in_chat(context->db_conn, message.chat_id, user->id)) {
         logging(ERROR, "User not in chat");
-        int ret = prepare_response("User not in chat", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("User not in chat", STATUS_FORBIDDEN, parsed_json, context);
 
         free_user(user);
         return ret;
@@ -111,7 +111,7 @@ int handle_edit_message(HttpContext *context) {
 
     if (strcmp(message.sender_id, user->id) != 0) {
         logging(ERROR, "User not message owner");
-        int ret = prepare_response("User not message owner", STATUS_FORBIDDEN, parsed_json, context);
+        int ret = prepare_simple_response("User not message owner", STATUS_FORBIDDEN, parsed_json, context);
 
         free_user(user);
         return ret;
@@ -119,12 +119,12 @@ int handle_edit_message(HttpContext *context) {
 
     if (edit_message(context->db_conn, message_id, new_content) != 0) {
         logging(ERROR, "Failed to edit message");
-        int ret = prepare_response("Failed to edit message", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+        int ret = prepare_simple_response("Failed to edit message", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
 
         free_user(user);
         return ret;
     }
 
     logging(INFO, "Message edited successfully");
-    return prepare_response("Message edited successfully", STATUS_OK, parsed_json, context);
+    return prepare_simple_response("Message edited successfully", STATUS_OK, parsed_json, context);
 }

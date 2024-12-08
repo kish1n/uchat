@@ -35,7 +35,7 @@ int handle_long_polling(HttpContext *context, struct MHD_Connection *connection,
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     User *user = get_user_by_username(context->db_conn, username);

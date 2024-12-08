@@ -38,7 +38,7 @@ int handle_create_group_chat(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
 
@@ -49,31 +49,31 @@ int handle_create_group_chat(HttpContext *context) {
         name = json_object_get_string(name_obj);
     }
     if (!json_object_object_get_ex(parsed_json, "users", &users_array)) {
-        return prepare_response("Missing 'users' array", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Missing 'users' array", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     if (!name || strlen(name) == 0) {
-        return prepare_response("Missing or invalid 'name' field", STATUS_BAD_REQUEST, parsed_json, context);
+        return prepare_simple_response("Missing or invalid 'name' field", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     int chat_id = create_chat(context->db_conn, name, 1);
     if (chat_id <= 0) {
         logging(ERROR, "Failed to create chat '%s'", name);
-        return prepare_response("Failed to create chat", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+        return prepare_simple_response("Failed to create chat", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
     }
 
     char *creator_username = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &creator_username) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *creator = get_user_by_username(context->db_conn, creator_username);
 
     if (add_chat_member(context->db_conn, chat_id, creator->id, 1) != 0) {
         logging(ERROR, "Failed to add creator '%s' to chat '%s'", creator->username, name);
-        return prepare_response("Failed to add chat creator", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+        return prepare_simple_response("Failed to add chat creator", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
     }
 
     size_t user_count = json_object_array_length(users_array);
@@ -98,5 +98,5 @@ int handle_create_group_chat(HttpContext *context) {
     free(creator_username);
 
     logging(INFO, "Group chat '%s' created successfully with ID %d", name, chat_id);
-    return prepare_response("Success", STATUS_OK, parsed_json, context);
+    return prepare_simple_response("Success", STATUS_OK, parsed_json, context);
 }

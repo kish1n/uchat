@@ -18,19 +18,19 @@ int handle_get_chat_info(HttpContext *context) {
     int chat_id = atoi(url);
 
     if (chat_id <= 0) {
-        return prepare_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, context);
+        return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, context);
     }
 
     // Check if the chat exists
     if (!chat_exists(context->db_conn, chat_id)) {
-        return prepare_response("Chat does not exist", STATUS_NOT_FOUND, NULL, context);
+        return prepare_simple_response("Chat does not exist", STATUS_NOT_FOUND, NULL, context);
     }
 
     // Get chat name
     char chat_name[255];
     if (get_chat_name(context->db_conn, chat_id, chat_name, sizeof(chat_name)) != 0) {
         logging(ERROR, "Failed to retrieve chat name for chat ID: %d", chat_id);
-        return prepare_response("Failed to retrieve chat name", STATUS_INTERNAL_SERVER_ERROR, NULL, context);;
+        return prepare_simple_response("Failed to retrieve chat name", STATUS_INTERNAL_SERVER_ERROR, NULL, context);;
     }
 
     // Get chat members
@@ -39,7 +39,7 @@ int handle_get_chat_info(HttpContext *context) {
 
     if (get_chat_members(context->db_conn, chat_id, &members, &member_count) != 0) {
         logging(ERROR, "Failed to retrieve chat members for chat ID: %d", chat_id);
-        return prepare_response("Failed to retrieve chat members", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
+        return prepare_simple_response("Failed to retrieve chat members", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
 
     // Build JSON response
@@ -62,5 +62,5 @@ int handle_get_chat_info(HttpContext *context) {
 
     free(members);
 
-    return prepare_response("Successfully retrieved chat information", STATUS_OK, response_json, context);;
+    return prepare_response( STATUS_OK, response_json, context);;
 }

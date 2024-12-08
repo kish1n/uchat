@@ -24,7 +24,7 @@ int handle_get_user_chats(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
+        return prepare_simple_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     User *sender = get_user_by_username(context->db_conn, username);
@@ -32,15 +32,15 @@ int handle_get_user_chats(HttpContext *context) {
 
     if (!sender) {
         logging(ERROR, "User not found: %s", username);
-        return prepare_response("User not found", STATUS_NOT_FOUND, NULL, context);
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, NULL, context);
     }
 
     char *chats_json = get_user_chats(context->db_conn, sender->id);
     if (!chats_json) {
         logging(INFO, "Failed to get user chats");
-        return prepare_response("Failed to get user chats", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
+        return prepare_simple_response("Failed to get user chats", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
 
     logging(INFO, "User chats gets successfully");
-    return prepare_response("User chats gets successfully", STATUS_OK, json_tokener_parse(chats_json), context);
+    return prepare_response( STATUS_OK, json_tokener_parse(chats_json), context);
 }
