@@ -72,6 +72,18 @@ int handle_add_member_to_chat(HttpContext *context) {
         return ret;
     }
 
+    // Check if chat is a group
+    if (!is_chat_group(context->db_conn, chat_id)) {
+        logging(ERROR, "Chat ID '%d' is not a group chat", chat_id);
+        const char *error_msg = create_response("forbidden", STATUS_FORBIDDEN);
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+        int ret = MHD_queue_response(context->connection, MHD_HTTP_FORBIDDEN, response);
+        MHD_destroy_response(response);
+        json_object_put(parsed_json);
+        return ret;
+    }
+
     char *sender = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &sender) != 1) {
