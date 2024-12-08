@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../../../pkg/config/config.h"
 #include <sqlite3.h>
 
@@ -20,3 +21,4 @@ int get_new_messages_by_chat(sqlite3 *db, int chat_id, int last_message_id, Mess
 int get_last_message_id(sqlite3 *db, int chat_id);
 int edit_last_message_id(sqlite3 *db, int chat_id, int message_id);
 int delete_all_messages_in_chat(sqlite3 *db, int chat_id);
+int get_chat_id_by_message_id(sqlite3 *db, int message_id);

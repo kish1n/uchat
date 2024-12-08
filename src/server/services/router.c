@@ -77,14 +77,18 @@ enum MHD_Result router(void *cls,
             return handle_send_message(&context);
         }
 
-        //TODO
-        // if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "DELETE") == 0) {
-        //     return handle_delete_message(&context); //{"message_id": "message_id"}
-        // }
-        //TODO
-        // if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "PATCH") == 0) {
-        //     return handle_edit_message(&context); //{"message_id": "message_id", "content": "new_content"}
-        // }
+
+         if (strcmp(sub_url, "/delete") == 0 && strcmp(method, "DELETE") == 0) {
+             //req:  {"id": "message_id"}
+             //resp: { "status": status_code, "message": "details" }
+             return handle_delete_message(&context);
+         }
+
+         if (strcmp(sub_url, "/edit") == 0 && strcmp(method, "PATCH") == 0) {
+             //req:  {"message_id": "message_id",  "new_content": "new_content"}
+             //resp: { "status": status_code, "message": "details" }
+             return handle_edit_message(&context);
+         }
 
         const char *id_str = sub_url + strlen("/history/");
         int chat_id = atoi(id_str);
@@ -175,7 +179,6 @@ enum MHD_Result router(void *cls,
             //]
             //IF LAST MESSAGE ID IS NULL, THEN THERE IS NO MESSAGES IN CHAT
             //resp-bad: {"status": status_code, "message": "details"}
-
             return handle_get_user_chats(&context);
         }
     }

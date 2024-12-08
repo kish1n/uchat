@@ -1,8 +1,10 @@
 #ifndef CHATS_H
 #define CHATS_H
-#include "../../../pkg/config/config.h"
+
 #include <sqlite3.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include "../../../pkg/config/config.h"
 
 typedef struct {
     int id;
@@ -22,5 +24,6 @@ int private_chat_exist(sqlite3 *db, const char *user1_id, const char *user2_id);
 int get_chat_name(sqlite3 *db, int chat_id, char *chat_name, size_t chat_name_size);
 char *get_chat_messages(sqlite3 *db, int chat_id);
 char *get_user_chats(sqlite3 *db, const char *user_id);
-
+int update_last_message_id(sqlite3 *db, int chat_id);
+bool is_last_message_in_chat(sqlite3 *db, int message_id, int chat_id);
 #endif // CHATS_H

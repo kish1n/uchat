@@ -16,7 +16,9 @@ int handle_update_chat_name(HttpContext *context);
 int handle_get_chat_info(HttpContext *context);
 int handle_get_chat_history(HttpContext *context);
 int handle_get_user_chats(HttpContext *context);
-int handle_long_polling(HttpContext *context, struct MHD_Connection *connection, int chat_id);
+int handle_edit_message(HttpContext *context);
+int handle_delete_message(HttpContext *context);
 
+int handle_long_polling(HttpContext *context, struct MHD_Connection *connection, int chat_id);
 
 #endif
