@@ -1,10 +1,10 @@
+#include "server.h"
 #include <stdlib.h>
 #include <microhttpd.h>
-#include "service.h"
-#include "../db/core/core.h"
-#include "auth/auth_handlers.h"
+#include "db/core/core.h"
+#include "services/auth/auth_handlers.h"
 
-Server* server_init(int port, PGconn *db_conn) {
+Server* server_init(int port) {
     Server *server = malloc(sizeof(Server));
     if (!server) {
         logging(ERROR, "Failed to allocate memory for server");
@@ -12,7 +12,6 @@ Server* server_init(int port, PGconn *db_conn) {
     }
     server->port = port;
     server->daemon = NULL;
-    server->db_conn = db_conn;
     return server;
 }
 

@@ -1,9 +1,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+
 #include <libpq-fe.h>
 #include <sqlite3.h>
-
 #include "../http_response/response.h"
+#include "../httputils/httpcontext.h"
 
 typedef enum {
     DEBUG,
@@ -41,20 +42,7 @@ typedef struct {
     SecurityConfig security;
 } Config;
 
-typedef struct {
-    void *cls;
-    struct MHD_Connection *connection;
-    const char *url;
-    const char *method;
-    const char *version;
-    const char *upload_data;
-    size_t *upload_data_size;
-    void **con_cls;
-    sqlite3 *db_conn;
-} HttpContext;
-
 int load_config(const char *filename, Config *config);
-
 void init_logger(const LoggingConfig *logging_config);
 void logging(LogLevel level, const char *format, ...);
 void log_db_error(PGconn *db_conn, const char *context_message);

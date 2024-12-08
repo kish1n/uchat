@@ -5,18 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <microhttpd.h>
-#include <libpq-fe.h>
 #include "../pkg/config/config.h"
+#include "../pkg/http_response/response.h"
 
 #define MAX_HANDLERS 100
 #define MAX_PATH_LEN 256
 #define PORT 8080
-
-typedef struct {
-    int port;
-    struct MHD_Daemon *daemon;
-    PGconn *db_conn;
-} Server;
 
 typedef struct {
     char *data;
@@ -34,11 +28,6 @@ typedef struct WebSocketServer {
     int client_count;
     pthread_mutex_t lock;
 } WebSocketServer;
-
-Server *server_init(int port, PGconn *db_conn);
-int server_start(Server *server);
-void server_stop(Server *server);
-void server_destroy(Server *server);
 
 void free_request_data(void *con_cls);
 enum MHD_Result router(void *cls,

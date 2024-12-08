@@ -14,7 +14,7 @@ SRC_DIR = src
 OBJ_DIR = build
 
 # Найти все файлы с исходным кодом + main.c
-SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c") main.c
+SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c")
 OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(OBJ_DIR)/%, $(SRC_FILES:.c=.o))
 
 # Линковка библиотек

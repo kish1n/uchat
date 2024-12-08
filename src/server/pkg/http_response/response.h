@@ -1,8 +1,12 @@
 #ifndef RESPONSE_H
 #define RESPONSE_H
 
+#include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
+#include <microhttpd.h>
+#include <json-c/json_object.h>
+#include "../httputils/httpcontext.h"
 /**
  * Enum for HTTP status codes
  */
@@ -18,6 +22,8 @@ typedef enum {
     STATUS_CONFLICT = 409,
     STATUS_INTERNAL_SERVER_ERROR = 500,
 } STATUS_CODE;
+
+int prepare_response(const char *error_msg, const STATUS_CODE status_code, json_object *json_data, HttpContext *context);
 
 /**
  * Creates an HTTP response in JSON format.

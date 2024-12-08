@@ -36,12 +36,7 @@ int handle_login(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Failed to parse JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
     // Extract username and password
@@ -56,36 +51,18 @@ int handle_login(HttpContext *context) {
     }
 
     if (!username || !password) {
-        const char *error_msg = create_error_response("Missing 'username' or 'password' in request", STATUS_BAD_REQUEST);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Missing 'username' or 'password' in request", STATUS_BAD_REQUEST,  parsed_json, context);
     }
 
     // Check user credentials (pseudo code for database verification)
     if (!check_user_credentials(context->db_conn, username, password)) {
-        const char *error_msg = create_error_response( "Invalid username or password", STATUS_BAD_REQUEST);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid username or password", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     // Generate JWT token
-    char *token = generate_jwt(username, cfg.security.jwt_secret, 3600); // 1-hour expiration
+    char *token = generate_jwt(username, cfg.security.jwt_secret, 3600);
     if (!token) {
-        const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Failed to generate JWT token", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
     }
 
     // Create success response

@@ -12,7 +12,6 @@ include_directories(${YAML_INCLUDE_DIRS} /usr/include/postgresql)
 link_directories(/usr/lib/x86_64-linux-gnu)
 
 add_executable(uchat_auth
-        main.c
 
         src/server/db/core/core.h
         src/server/db/core/users/delete_user.c
@@ -22,7 +21,7 @@ add_executable(uchat_auth
         src/server/pkg/json_parser/json_parser.c
         src/server/pkg/crypto/crypto.c
 
-        src/server/services/service.c
+        src/server/server.c
         src/server/services/router.c
         src/server/services/free_request.c
 
@@ -95,6 +94,12 @@ add_executable(uchat_auth
         src/server/db/core/messages/get_last_message_id.c
         src/server/db/core/messages/edit_last_message_id.c
         src/server/services/messenger/handle_test.c
+        src/server/main.c
+        src/server/daemonize.c
+        src/server/pkg/http_response/create_error_response.c
+        src/server/pkg/http_response/prepare_response.c
+        src/server/pkg/http_response/create_response.c
+        src/server/pkg/httputils/httpcontext.h
 
 )
 
