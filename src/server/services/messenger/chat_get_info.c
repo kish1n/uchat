@@ -49,8 +49,8 @@ int handle_get_chat_info(HttpContext *context) {
     for (int i = 0; i < member_count; ++i) {
         User *sender = get_user_by_uuid(context->db_conn, members[i].user_id);
         struct json_object *member_obj = json_object_new_object();
-        json_object_object_add(member_obj, "user_id", json_object_new_string(sender->username));
-        json_object_object_add(member_obj, "is_admin", json_object_new_boolean(members[i].user_id));
+        json_object_object_add(member_obj, "username", json_object_new_string(sender->username));
+        json_object_object_add(member_obj, "is_admin", json_object_new_boolean(members[i].is_admin));
         json_object_array_add(members_array, member_obj);
         free_user(sender);
     }
