@@ -111,7 +111,7 @@ int handle_leave_chat(HttpContext *context) {
     }
 
     // Remove the user from the chat
-    if (delete_user_from_chat(context->db_conn, chat_id, user->id) != 1) {
+    if (delete_user_from_chat(context->db_conn, chat_id, user->id) != 0) {
         logging(ERROR, "Failed to remove user '%s' from chat ID '%d'", user->username, chat_id);
         const char *error_msg = create_error_response("Failed to leave chat", STATUS_INTERNAL_SERVER_ERROR);
         struct MHD_Response *response = MHD_create_response_from_buffer(
