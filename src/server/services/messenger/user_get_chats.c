@@ -24,12 +24,7 @@ int handle_get_user_chats(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     User *sender = get_user_by_username(context->db_conn, username);
@@ -37,28 +32,15 @@ int handle_get_user_chats(HttpContext *context) {
 
     if (!sender) {
         logging(ERROR, "User not found: %s", username);
-        const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("User not found", STATUS_NOT_FOUND, NULL, context);
     }
 
     char *chats_json = get_user_chats(context->db_conn, sender->id);
     if (!chats_json) {
         logging(INFO, "Failed to get user chats");
-        const char *error_msg = create_error_response("No chats found for user", STATUS_NOT_FOUND);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        return MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
+        return prepare_response("Failed to get user chats", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
 
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(chats_json), (void *)chats_json, MHD_RESPMEM_MUST_COPY);
-    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-    free(chats_json);
-    MHD_destroy_response(response);
     logging(INFO, "User chats gets successfully");
-    return ret;
+    return prepare_response("User chats gets successfully", STATUS_OK, json_tokener_parse(chats_json), context);
 }

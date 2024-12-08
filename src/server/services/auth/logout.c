@@ -12,16 +12,10 @@ int handle_logout(HttpContext *context) {
         return MHD_NO;
     }
 
-    // Validate JWT
     char *user_id = NULL;
     int auth_status = validate_auth_token(context, &user_id);
     if (auth_status != MHD_HTTP_OK) {
-        const char *error_msg = create_response("Unauthorized", STATUS_UNAUTHORIZED);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, auth_status, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid or missing token", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     // Logout logic (e.g., invalidate the token in a token blacklist, if implemented)
@@ -30,12 +24,5 @@ int handle_logout(HttpContext *context) {
 
     free(user_id);
 
-    // Respond with success
-    const char *success_msg = create_response("Log out successful", STATUS_OK);
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-
-    return ret;
+    return prepare_response("Successfully logged out", STATUS_OK, NULL, context);
 }

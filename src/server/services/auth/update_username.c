@@ -38,12 +38,7 @@ int handle_update_username(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        const char *error_msg = "Invalid JSON";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     struct json_object *new_username_obj, *password_obj;
@@ -59,13 +54,7 @@ int handle_update_username(HttpContext *context) {
 
     if (!new_username || strlen(new_username) == 0 || !password) {
         logging(ERROR, "Missing or empty new_username or password in request");
-        const char *error_msg = create_error_response("Invalid JSON", STATUS_BAD_REQUEST);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, parsed_json, context);
     }
     logging(DEBUG, "New username: %s, Password: %s", new_username, password);
 
@@ -73,25 +62,14 @@ int handle_update_username(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &user_id) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     logging(DEBUG, "User ID: %s", user_id);
 
     if (!check_user_credentials(context->db_conn, user_id, password)) {
         logging(ERROR, "Invalid password for user ID: %s", user_id);
-        const char *error_msg = create_error_response("Invalid password", STATUS_FORBIDDEN);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Invalid password", STATUS_UNAUTHORIZED, parsed_json, context);
         free(user_id);
         return ret;
     }
@@ -100,12 +78,7 @@ int handle_update_username(HttpContext *context) {
 
     if (get_user_by_username(context->db_conn, new_username)) {
         logging(ERROR, "Username already taken: %s", new_username);
-        const char *error_msg = create_error_response("Username already taken", STATUS_CONFLICT);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_CONFLICT, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Username already taken", STATUS_CONFLICT, parsed_json, context);
         free(user_id);
         return ret;
     }
@@ -114,12 +87,7 @@ int handle_update_username(HttpContext *context) {
 
     if (update_user_username(context->db_conn, user_id, new_username) != 0) {
         logging(ERROR, "Failed to update username for user ID: %s", user_id);
-        const char *error_msg = create_error_response("Failed to update username", STATUS_INTERNAL_SERVER_ERROR);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Failed to update username", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
         free(user_id);
         return ret;
     }
@@ -127,12 +95,7 @@ int handle_update_username(HttpContext *context) {
     char *new_token = generate_jwt(new_username, cfg.security.jwt_secret, 3600);
     if (!new_token) {
         logging(ERROR, "Failed to generate new JWT for user: %s", new_username);
-        const char *error_msg = create_error_response("Failed to generate token", STATUS_INTERNAL_SERVER_ERROR);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Failed to generate new JWT", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
         free(user_id);
         return ret;
     }
@@ -141,15 +104,10 @@ int handle_update_username(HttpContext *context) {
     json_object_object_add(response_json, "status", json_object_new_string("success"));
     json_object_object_add(response_json, "token", json_object_new_string(new_token));
 
-    const char *response_str = json_object_to_json_string(response_json);
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(response_str), (void *)response_str, MHD_RESPMEM_MUST_COPY);
-    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
+    int ret = prepare_response("Username updated successfully", STATUS_OK, response_json, context);
 
     logging(INFO, "User %s successfully updated username to %s and received new token", user_id, new_username);
 
-    json_object_put(response_json);
     json_object_put(parsed_json);
     free(user_id);
     free(new_token);

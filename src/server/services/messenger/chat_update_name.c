@@ -41,12 +41,7 @@ int handle_update_chat_name(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        const char *error_msg = "Invalid JSON";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
 
     // Extract required fields from JSON
@@ -64,13 +59,7 @@ int handle_update_chat_name(HttpContext *context) {
 
     // Validate required fields
     if (chat_id <= 0 || !new_name || strlen(new_name) == 0) {
-        const char *error_msg = "Missing or invalid 'chat_id' or 'new_name'";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Missing or invalid 'chat_id' or 'new_name'", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     // Extract user from JWT
@@ -78,25 +67,15 @@ int handle_update_chat_name(HttpContext *context) {
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     // Check if user is part of the chat
     User *user = get_user_by_username(context->db_conn, username);
     if (!user || !is_user_in_chat(context->db_conn, chat_id, user->id)) {
         logging(ERROR, "User '%s' is not part of chat ID '%d'", username, chat_id);
-        const char *error_msg = create_error_response("forbidden", STATUS_FORBIDDEN);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_FORBIDDEN, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("User is not in the chat", STATUS_FORBIDDEN, parsed_json, context);
+
         free(username);
         return ret;
     }
@@ -104,12 +83,8 @@ int handle_update_chat_name(HttpContext *context) {
     // Check if chat is a group
     if (!is_chat_group(context->db_conn, chat_id)) {
         logging(ERROR, "Chat ID '%d' is not a group", chat_id);
-        const char *error_msg = create_error_response("Cannot update name for private chats", STATUS_FORBIDDEN);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_FORBIDDEN, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret =prepare_response("Chat is not a group", STATUS_FORBIDDEN, parsed_json, context);
+
         free(username);
         return ret;
     }
@@ -117,26 +92,16 @@ int handle_update_chat_name(HttpContext *context) {
     // Update chat name in database
     if (update_chat_name(context->db_conn, chat_id, new_name) != 0) {
         logging(ERROR, "Failed to update chat name for chat ID '%d'", chat_id);
-        const char *error_msg = create_error_response("Failed to update chat name", STATUS_INTERNAL_SERVER_ERROR);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Failed to update chat name", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+
         free(username);
         return ret;
     }
 
-    // Successful response
-    const char *success_msg = create_response("Chat name updated successfully", STATUS_OK);
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-
     logging(INFO, "User '%s' updated chat ID '%d' to name '%s'", username, chat_id, new_name);
+    int ret = prepare_response("Chat name updated success", STATUS_OK, parsed_json, context);
 
-    json_object_put(parsed_json);
     free(username);
+
     return ret;
 }

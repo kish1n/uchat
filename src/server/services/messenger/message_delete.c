@@ -43,13 +43,9 @@ int handle_delete_message(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        const char *error_msg = "Invalid JSON";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
+
 
     struct json_object *message_id_obj;
     int message_id = -1;
@@ -60,24 +56,12 @@ int handle_delete_message(HttpContext *context) {
 
     // Validate required fields
     if (message_id <= 0) {
-        const char *error_msg = "Missing or invalid 'id' in request";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Missing or invalid 'id' in request", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     // Check if the message exists
     if (!message_exists(context->db_conn, message_id)) {
-        const char *error_msg = "Message does not exist";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Message does not exist", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     // Delete the message from the database
@@ -85,23 +69,12 @@ int handle_delete_message(HttpContext *context) {
 
     json_object_put(parsed_json);
 
-    if (result == 0) {
-        const char *success_msg = "{\"status\":\"success\"}";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-        MHD_destroy_response(response);
-
-        logging(INFO, "Message %d deleted successfully", message_id);
-        return ret;
-    } else {
-        const char *error_msg = "{\"status\":\"error\",\"message\":\"Failed to delete message\"}";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-
+    if (result != 0) {
         logging(ERROR, "Failed to delete message %d", message_id);
-        return ret;
+        return prepare_response("Failed to delete message", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
+
+    logging(INFO, "Message %d deleted successfully", message_id);
+
+    return prepare_response("Successfully deleted message", STATUS_OK, NULL, context);
 }

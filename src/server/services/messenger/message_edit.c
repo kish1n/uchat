@@ -57,14 +57,9 @@ int handle_edit_message(HttpContext *context) {
     *context->con_cls = NULL;
 
     if (!parsed_json) {
-        logging(ERROR, "Invalid JSON received");
-        const char *error_msg = "Invalid JSON";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JSON", STATUS_BAD_REQUEST, NULL, context);
     }
+
 
     struct json_object *message_id_obj, *new_content_obj;
     int message_id = -1;
@@ -80,96 +75,56 @@ int handle_edit_message(HttpContext *context) {
 
     if (message_id <= 0 || !new_content || strlen(new_content) == 0) {
         logging(ERROR, "Invalid fields in request");
-        const char *error_msg = "Invalid fields in request";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid fields in request", STATUS_BAD_REQUEST, parsed_json, context);
     }
 
     char *username = NULL;
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = "Unauthorized";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, parsed_json, context);
     }
 
     User *user = get_user_by_username(context->db_conn, username);
     free(username);
     if (!user) {
         logging(ERROR, "User not found");
-        const char *error_msg = "User not found";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
-        return ret;
+        return prepare_response("User not found", STATUS_NOT_FOUND, parsed_json, context);
     }
 
     Message message;
     if (get_message_by_id(context->db_conn, message_id, &message) != 0) {
         logging(ERROR, "Message not found");
-        const char *error_msg = "Message not found";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
+
         free_user(user);
         return ret;
     }
 
     if (!is_user_in_chat(context->db_conn, message.chat_id, user->id)) {
         logging(ERROR, "User not in chat");
-        const char *error_msg = "Forbidden";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_FORBIDDEN, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("User not in chat", STATUS_FORBIDDEN, parsed_json, context);
+
         free_user(user);
         return ret;
     }
 
     if (strcmp(message.sender_id, user->id) != 0) {
         logging(ERROR, "User not message owner");
-        const char *error_msg = "Forbidden";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_FORBIDDEN, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("User not message owner", STATUS_FORBIDDEN, parsed_json, context);
+
         free_user(user);
         return ret;
     }
 
     if (edit_message(context->db_conn, message_id, new_content) != 0) {
         logging(ERROR, "Failed to edit message");
-        const char *error_msg = "Internal Server Error";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        json_object_put(parsed_json);
+        int ret = prepare_response("Failed to edit message", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
+
         free_user(user);
         return ret;
     }
 
-    const char *success_msg = "Message edited successfully";
-    struct MHD_Response *response = MHD_create_response_from_buffer(
-        strlen(success_msg), (void *)success_msg, MHD_RESPMEM_PERSISTENT);
-    int ret = MHD_queue_response(context->connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
-    json_object_put(parsed_json);
     logging(INFO, "Message edited successfully");
-    return ret;
+    return prepare_response("Message edited successfully", STATUS_OK, parsed_json, context);
 }

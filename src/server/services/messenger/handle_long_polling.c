@@ -35,12 +35,7 @@ int handle_long_polling(HttpContext *context, struct MHD_Connection *connection,
     const char *jwt = extract_jwt_from_authorization_header(context->connection);
     if (!jwt || verify_jwt(jwt, cfg.security.jwt_secret, &username) != 1) {
         logging(ERROR, "JWT verification failed");
-        const char *error_msg = create_error_response("unauthorized", STATUS_UNAUTHORIZED);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_UNAUTHORIZED, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_response("Invalid JWT", STATUS_UNAUTHORIZED, NULL, context);
     }
 
     User *user = get_user_by_username(context->db_conn, username);
