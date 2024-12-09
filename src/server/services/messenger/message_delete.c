@@ -91,7 +91,7 @@ int handle_delete_message(HttpContext *context) {
 
     Message message;
     if (get_message_by_id(context->db_conn, message_id, &message) != 0) {
-        logging(ERROR, "Message not found");
+        logging(ERROR, "Message not found %d", message_id);
         int ret = prepare_simple_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
 
         free_user(user);
@@ -123,16 +123,17 @@ int handle_delete_message(HttpContext *context) {
         return ret;
     }
 
-    if (is_last_message_in_chat(context->db_conn, message_id, message.chat_id)) {
-        if (edit_last_message_id(context->db_conn, message.chat_id, message_id) != 0) {
-            logging(ERROR, "Failed to update last message ID for chat %d", message.chat_id);
-            int ret = prepare_simple_response("Failed to update last message ID", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
-
-            free_user(user);
-            return ret;
+    if (get_last_message_id_in_chat(context->db_conn, message.chat_id) == message_id) {
+        logging(DEBUG, "Message is last in chat");
+        int last_message_id = get_last_message_in_chat(context->db_conn, message.chat_id);
+        logging(DEBUG, "Last message ID: %d", last_message_id);
+        if (update_last_message_id(context->db_conn, message.chat_id, last_message_id) != 0) {
+            logging(ERROR, "Failed to update last message ID");
+            return prepare_simple_response("Failed to update last message ID", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
         }
     }
 
-    logging(INFO, "Message delete successfully");
-    return prepare_simple_response("Message delete successfully", STATUS_OK, parsed_json, context);
+    logging(INFO, "Message deleted successfully");
+    return prepare_simple_response("Message deleted successfully", STATUS_OK, parsed_json, context);
+
 }

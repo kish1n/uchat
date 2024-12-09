@@ -16,7 +16,7 @@ int get_messages_by_chat(sqlite3 *db, int chat_id, Message **messages, int *mess
     sqlite3_bind_int(stmt, 1, chat_id);
 
     int count = 0;
-    Message *temp_messages = malloc(sizeof(Message) * 100); // Предполагаем максимум 100 сообщений
+    Message *temp_messages = malloc(sizeof(Message) * 1000); // max 1000 messages
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         temp_messages[count].id = sqlite3_column_int(stmt, 0);
