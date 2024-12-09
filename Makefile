@@ -5,7 +5,8 @@ TARGET = uchat
 CC = gcc
 
 # Флаги компиляции
-CFLAGS = -Wall -Wextra -std=gnu11 -g -I/usr/include/postgresql
+#CFLAGS = -Wall -Wextra -std=gnu11 -g -I/usr/include/postgresql
+CFLAGS = -Wall -Wextra -std=gnu11 -g -I/usr/local/include/postgresql@14 -I/usr/local/Cellar/libpq/17.2/include
 
 # Путь до всех исходников
 SRC_DIR = src
@@ -18,7 +19,8 @@ SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c")
 OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(OBJ_DIR)/%, $(SRC_FILES:.c=.o))
 
 # Линковка библиотек
-LIBS = -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lwebsockets -lsqlite3 -luuid
+#LIBS = -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lwebsockets -lsqlite3 -luuid
+LIBS = -L/usr/local/lib -L/usr/local/Cellar/libpq/17.2/lib -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lsqlite3 -lwebsockets
 
 # Правило для компиляции всех объектов
 all: $(TARGET)
@@ -42,7 +44,7 @@ $(OBJ_DIR)/main.o: main.c
 # Очистка
 clean:
 	@echo "Cleaning up..."
-	@rm -rf $(OBJ_DIR) $(TARGET)
+	@rm -rf $(OBJ_DIR) $(TARGET) main.o
 	@echo "Clean complete."
 
 # Файлы и директории для управления Makefile

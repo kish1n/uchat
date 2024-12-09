@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pkg/config/config.h"
+#include "threads.h"
 
 typedef struct {
     int port;
@@ -21,5 +22,7 @@ void server_destroy(Server *server);
 void daemonize();
 void signal_handler(int sig);
 int main(int argc, char *argv[]);
+
+extern ThreadPool *global_thread_pool;
 
 #endif

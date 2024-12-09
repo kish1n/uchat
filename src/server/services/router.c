@@ -9,6 +9,8 @@
 #include "../services/messenger/messenger.h"
 #include "../db/core/core.h"
 #include "auth/auth_handlers.h"
+#include "../threads.h"
+#include "../server.h"
 
 enum MHD_Result router(void *cls,
                        struct MHD_Connection *connection,
@@ -18,6 +20,11 @@ enum MHD_Result router(void *cls,
                        const char *upload_data,
                        size_t *upload_data_size,
                        void **con_cls) {
+    logging(DEBUG, "Router invoked for URL: %s", url);
+    /*if (!url) {
+        logging(DEBUG, "Received NULL URL in router");
+        return MHD_NO;
+    }
     Config config;
     if (load_config("config.yaml", &config) != 0) {
         logging(ERROR, "Failed to load config");
@@ -31,7 +38,7 @@ enum MHD_Result router(void *cls,
             return EXIT_FAILURE;
         }
         db = get_db();
-    }
+    }*/
 
     HttpContext context = {
         .cls = cls,
@@ -45,7 +52,9 @@ enum MHD_Result router(void *cls,
         .db_conn = db
     };
 
-    if (starts_with(url, "/auth/")) {
+    
+
+    /*if (starts_with(url, "/auth/")) {
         const char *sub_url = url + strlen("/auth");
 
         if (strcmp(sub_url, "/register") == 0 && strcmp(method, "POST") == 0) {
@@ -115,6 +124,22 @@ enum MHD_Result router(void *cls,
 
         }
 
+        if (starts_with(sub_url, "/poll/") && strcmp(method, "GET") == 0) {
+            const char *id_str = sub_url + strlen("/poll/");
+            int chat_id = atoi(id_str);
+
+            if (chat_id > 0) {
+                return handle_long_polling(&context, connection, chat_id);
+            } else {
+                const char *error_msg = create_error_response("Invalid or missing 'chat_id' (router)", STATUS_BAD_REQUEST);
+                struct MHD_Response *response = MHD_create_response_from_buffer(
+                    strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
+                int ret = MHD_queue_response(connection, MHD_HTTP_BAD_REQUEST, response);
+                MHD_destroy_response(response);
+                return ret;
+            }
+        }
+
     } else if (starts_with(url, "/user/")) {
         const char *sub_url = url + strlen("/user");
 
@@ -122,6 +147,15 @@ enum MHD_Result router(void *cls,
             return handle_get_user_chats(&context);
         }
     }
+    
+    if (starts_with(url, "/test-url")) {
+        logging(INFO, "Received test-url");
+    }
 
-    return prepare_simple_response("Endpoint not found", STATUS_NOT_FOUND, NULL, &context);
+    return prepare_simple_response("Endpoint not found", STATUS_NOT_FOUND, NULL, &context);*/
+    enqueue_task(&global_thread_pool->task_queue, &context);
+    //handle_request(&context);
+    logging(DEBUG, "Task added to queue from router");
+
+    return MHD_YES;
 }

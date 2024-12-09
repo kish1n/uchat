@@ -39,4 +39,6 @@ enum MHD_Result router(void *cls,
     size_t *upload_data_size,
     void **con_cls);
 
+    enum MHD_Result handle_request(HttpContext *context);
+
 #endif

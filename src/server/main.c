@@ -3,9 +3,11 @@
 #include <stdlib.h>  // Для Server, server_init, server_start, server_destroy
 #include "db/core/core.h" // Для init_db, create_tables, close_db
 #include "services/service.h"
+#include "threads.h"
 
 volatile sig_atomic_t stop_server;
 
+ThreadPool *global_thread_pool;
 
 void signal_handler(int sig) {
     if (sig == SIGTERM || sig == SIGINT) {
@@ -52,9 +54,21 @@ int main(int argc, char *argv[]) {
     }
     logging(INFO, "Database tables created successfully");
 
+    global_thread_pool = thread_pool_init(4);
+    if(!global_thread_pool) {
+        logging(ERROR, "Failed to initialize pool");
+        close_db();
+        close_logger();
+        return EXIT_FAILURE;
+    }
+    logging(INFO, "Pool initialized successfully");
+
+    //test_enqueue(&global_thread_pool->task_queue); // test
+
     Server *server = server_init(port); // Pass NULL for db_conn since it's SQLite now
     if (!server) {
         logging(ERROR, "Failed to initialize server");
+        thread_pool_destroy(global_thread_pool);
         close_db();
         close_logger();
         return EXIT_FAILURE;
@@ -63,6 +77,7 @@ int main(int argc, char *argv[]) {
     if (server_start(server) != 0) {
         logging(ERROR, "Failed to start server");
         server_destroy(server);
+        thread_pool_destroy(global_thread_pool);
         close_db();
         close_logger();
         return EXIT_FAILURE;
@@ -78,6 +93,7 @@ int main(int argc, char *argv[]) {
 
     logging(INFO, "Server is shutting down...");
     server_destroy(server);
+    thread_pool_destroy(global_thread_pool);
     close_db();
     close_logger();
 
