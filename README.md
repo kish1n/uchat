@@ -1,68 +1,124 @@
-# UChat Project
+# uChat: A Multithreaded Chat Server
 
-## Описание проекта
+## Overview
 
-UChat — это чат-приложение, разработанное на языке C. В проекте используется архитектура на основе сервисов и разделение на модули для работы с базой данных, аутентификации, обработки сообщений и вспомогательных пакетов.
+uChat is a multithreaded chat server application designed to facilitate communication through various endpoints, enabling user registration, login, chat creation, messaging, and more. It employs modern C programming practices.
+## Features
 
-## Структура проекта
+- **User Management**:
 
-Проект организован в несколько папок, каждая из которых отвечает за определённый аспект приложения.
+    - User registration
+    - Login and JWT-based authentication
+    - Update user information
 
-### Папка `db`
+- **Chat Management**:
 
-В папке `db` находится код для работы с базой данных. Она разделена на два основных раздела:
-- `migrations` — здесь хранятся SQL-скрипты для миграции базы данных. Файлы миграций (`001_drop.sql`, `001_init.sql`) содержат инструкции для создания и удаления таблиц.
-- `core` — эта папка содержит код для работы с таблицами базы данных. Каждая таблица имеет свою поддиректорию:
-    - `chat_rooms` — код для взаимодействия с таблицей чатов.
-    - `messages` — код для работы с сообщениями.
-    - `room_members` — код для работы с участниками комнат.
-    - `users` — код для работы с пользователями.
+    - Private and group chat creation
+    - Update chat names
+    - Add or remove chat members
+    - Fetch user’s chat list
 
-### Папка `pkg`
+- **Messaging**:
 
-Папка `pkg` содержит вспомогательные модули, которые используются в сервисах:
-- `config` — модуль для загрузки конфигурации из `config.yaml`.
-- `crypto` — модуль для хеширования паролей.
-- `json_parser` — модуль для обработки JSON.
-- `logger` — модуль для логирования.
-- `worker` — модуль для управления потоками (воркерами).
+    - Send messages
+    - Edit and delete messages
+    - Fetch chat history
 
-Эти пакеты служат для реализации дополнительных функций, которые могут быть полезны в различных сервисах.
 
-### Папка `services`
+## Technical Details
 
-В этой папке хранится бизнес-логика приложения. Для каждого сервиса создаётся своя папка. В настоящее время структура включает следующие сервисы:
+- **Programming Language**: C
+- **Database**: SQLite
+- **Libraries Used**:
+    - [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/) for HTTP server functionality
+    - [json-c](https://github.com/json-c/json-c) for JSON parsing and generation
+    - [libjwt](https://github.com/benmcollins/libjwt) for JWT handling
+    - [pthread](https://man7.org/linux/man-pages/man7/pthreads.7.html) for multithreading
 
-- `auth` — логика для аутентификации и регистрации пользователей. В этой папке также есть поддиректория `handlers`, где располагаются обработчики HTTP-запросов для регистрации и входа.
-- `messenger` — логика для отправки сообщений между пользователями. В `handlers` этого сервиса будут находиться обработчики для отправки и получения сообщений.
+## Architecture
 
-По мере развития проекта можно добавлять новые сервисы. Например:
-- `email` — для отправки подтверждений на электронную почту пользователей или других уведомлений.
 
-### Основные файлы и настройки
+### Database Integration
 
-- `CMakeLists.txt` — файл конфигурации для сборки проекта с помощью CMake.
-- `config.yaml` — файл конфигурации, содержащий параметры базы данных, сервера, логирования и безопасности.
-- `main.c` — основной файл проекта, который инициализирует сервисы, запускает воркеры и HTTP-сервер для обработки запросов.
+SQLite is used for persistent storage, with dedicated tables for users, messages, chats, and chat members. The server ensures thread-safe database operations using appropriate locking mechanisms.
 
-## Как начать работу
+### Routing
 
-1. **Склонируйте репозиторий** и установите необходимые зависимости (например, `libjson-c-dev`, `libpq-dev`, `libmicrohttpd-dev`).
-2. **Соберите проект** с помощью CMake:
-   ```bash
-   mkdir build && cd build
-   cmake ..
-   make
-   ```
-3. **Запустите сервер**:
-   ```bash
-   ./uchat_auth
-   ```
-4. **Отправляйте запросы к серверу**:
-    - Для регистрации: отправьте POST-запрос на `/api/v1/register` с параметрами `username` и `password`.
+The server implements a modular router to handle API endpoints. The router directs requests to specific handler functions based on the URL and HTTP method.
 
-## Планы по улучшению
+## Installation
 
-- Добавление сервиса для отправки уведомлений на электронную почту.
-- Поддержка мультитрединга для обработки большого количества запросов.
-- Улучшение системы логирования для удобства отладки.
+### Prerequisites
+
+- GCC compiler
+- SQLite development libraries
+- Required libraries: `libmicrohttpd`, `json-c`, `libjwt`
+
+### Build
+
+Clone the repository and build the project using the provided `Makefile`:
+
+```bash
+git clone <repository_url>
+cd uchat
+make
+```
+
+### Run
+
+Run the server on a specified port:
+
+```bash
+./uchat <port_number>
+```
+
+For example:
+
+```bash
+./uchat 8080
+```
+
+## API Endpoints
+
+### Authentication
+
+- `POST /auth/register`: Register a new user
+- `POST /auth/login`: Authenticate and get a JWT token
+- `GET /auth/logout`: Logout the user
+
+### User Management
+
+- `GET /user/chats`: Fetch the list of chats for the authenticated user
+
+### Chat Management
+
+- `POST /chats/create_private`: Create a private chat
+- `POST /chats/create_group`: Create a group chat
+- `PATCH /chats/update_name`: Update the name of a chat
+- `POST /chats/add_member`: Add a member to a chat
+- `DELETE /chats/remove_member`: Remove a member from a chat
+- `DELETE /chats/delete`: Delete a chat
+
+### Messaging
+
+- `POST /messages/send`: Send a message to a chat
+- `PATCH /messages/edit`: Edit a message
+- `DELETE /messages/delete`: Delete a message
+- `GET /messages/history/{chat_id}`: Fetch the history of a chat
+
+## Future Updates
+
+- **Multithreaded Architecture Improvements**: Enhancing task distribution and error handling in the thread pool.
+- **Long Polling for Real-Time Updates**: Improved implementation for message delivery and notifications.
+
+## Contribution
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create a new branch: `git checkout -b feature-name`
+3. Commit your changes: `git commit -m 'Add some feature'`
+4. Push to the branch: `git push origin feature-name`
+5. Open a pull request
+
+
