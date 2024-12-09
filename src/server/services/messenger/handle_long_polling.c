@@ -22,12 +22,7 @@ int handle_long_polling(HttpContext *context, struct MHD_Connection *connection,
     }
 
     if (chat_id <= 0) {
-        const char *error_msg = "Invalid or missing 'chat_id'";
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_BAD_REQUEST, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, context);
     }
 
     // Проверка JWT
@@ -43,23 +38,13 @@ int handle_long_polling(HttpContext *context, struct MHD_Connection *connection,
 
     if (!user) {
         logging(ERROR, "User not found");
-        const char *error_msg = create_error_response("User not found", STATUS_NOT_FOUND);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_NOT_FOUND, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_simple_response("User not found", STATUS_NOT_FOUND, NULL, context);
     }
 
     int last_checked_message_id = get_last_message_id(context->db_conn, chat_id);
     if (last_checked_message_id < 0) {
         logging(ERROR, "Failed to fetch last_message_id for chat_id=%d", chat_id);
-        const char *error_msg = create_error_response("Failed to fetch chat messages", STATUS_INTERNAL_SERVER_ERROR);
-        struct MHD_Response *response = MHD_create_response_from_buffer(
-            strlen(error_msg), (void *)error_msg, MHD_RESPMEM_PERSISTENT);
-        int ret = MHD_queue_response(context->connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
-        MHD_destroy_response(response);
-        return ret;
+        return prepare_simple_response("Failed to fetch last_message_id", STATUS_INTERNAL_SERVER_ERROR, NULL, context);
     }
 
     struct json_object *response_array = json_object_new_array();
@@ -95,14 +80,5 @@ int handle_long_polling(HttpContext *context, struct MHD_Connection *connection,
         elapsed_time += POLL_INTERVAL;
     }
 
-    const char *response_str = json_object_to_json_string(response_array);
-    struct MHD_Response *mhd_response = MHD_create_response_from_buffer(
-        strlen(response_str), (void *)response_str, MHD_RESPMEM_MUST_COPY);
-    json_object_put(response_array); // Освобождаем JSON-объект
-
-    int status_code = (elapsed_time < MAX_POLL_TIME) ? MHD_HTTP_OK : MHD_HTTP_NO_CONTENT;
-    int ret = MHD_queue_response(context->connection, status_code, mhd_response);
-    MHD_destroy_response(mhd_response);
-
-    return ret;
+    return prepare_response(STATUS_FOUND, response_array, context);
 }

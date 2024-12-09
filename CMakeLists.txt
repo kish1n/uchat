@@ -93,7 +93,6 @@ add_executable(uchat_auth
         src/server/db/core/messages/get_new_messages_by_chat.c
         src/server/db/core/messages/get_last_message_id.c
         src/server/db/core/messages/edit_last_message_id.c
-        src/server/services/messenger/handle_test.c
         src/server/main.c
         src/server/daemonize.c
         src/server/pkg/http_response/create_error_response.c

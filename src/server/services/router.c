@@ -90,6 +90,24 @@ enum MHD_Result router(void *cls,
              return handle_edit_message(&context);
          }
 
+        if (starts_with(sub_url, "/long_polling/")) {
+            const char *id_str = sub_url + strlen("/long_polling/");
+            int chat_id = atoi(id_str);
+            if (chat_id > 0) {
+                context.url = id_str;
+                return handle_long_polling(&context, connection, chat_id);
+                // meth: GET
+                // link: "/messages/long_polling/{chat_id}"
+                // success-resp: [
+                //     { "id": "message_id", "sender": "username", "message": "message_text", "sent_at": "time format datetime" },
+                //     ...
+                // ]
+                // bad:  {"status": status_code, "message": "details"}
+            }
+
+            return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, &context);
+        }
+
         const char *id_str = sub_url + strlen("/history/");
         int chat_id = atoi(id_str);
         if (chat_id > 0) {
@@ -105,6 +123,7 @@ enum MHD_Result router(void *cls,
             //]
             //bad:  {"status": status_code, "message": "details"}
         }
+
 
         return prepare_simple_response("Invalid or missing 'chat_id'", STATUS_BAD_REQUEST, NULL, &context);
 
