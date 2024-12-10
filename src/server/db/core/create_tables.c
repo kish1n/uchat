@@ -41,10 +41,24 @@ int create_tables() {
         "FOREIGN KEY (sender_id) REFERENCES users (id) ON DELETE SET NULL"
         ");";
 
+    const char *create_indexes[] = {
+        "CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);",
+        "CREATE INDEX IF NOT EXISTS idx_chats_last_message_id ON chats (last_message_id);",
+        "CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members (user_id);",
+        "CREATE INDEX IF NOT EXISTS idx_chat_members_chat_id ON chat_members (chat_id);",
+        "CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages (chat_id);",
+        "CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages (sender_id);"
+    };
+
     if (execute_sql(create_users) != 0) return -1;
     if (execute_sql(create_chats) != 0) return -1;
     if (execute_sql(create_chat_members) != 0) return -1;
     if (execute_sql(create_messages) != 0) return -1;
+
+    for (int i = 0; i < sizeof(create_indexes) / sizeof(create_indexes[0]); i++) {
+        if (execute_sql(create_indexes[i]) != 0) return -1;
+    }
+
     if (execute_sql("PRAGMA journal_mode=WAL;") != 0) return -1;
 
     return 0;
