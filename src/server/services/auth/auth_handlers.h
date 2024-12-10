@@ -2,7 +2,6 @@
 #define AUTH_HANDLERS_H
 
 #include <microhttpd.h>
-#include <libpq-fe.h>
 #include "../service.h"
 
 int handle_register(HttpContext *context);

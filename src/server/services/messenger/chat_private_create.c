@@ -135,9 +135,11 @@ int handle_create_private_chat(HttpContext *context) {
         return ret;
     }
 
+    struct json_object *response_json = json_object_new_object();
+    json_object_object_add(response_json, "chat_id", json_object_new_int(chat_id));
 
     logging(INFO, "Chat created successfully: '%s' between '%s' and '%s'", chat_name, creator->username, second_user->username);
-    int ret = prepare_simple_response("Chat created successfully", STATUS_OK, NULL, context);
+    int ret = prepare_response(STATUS_OK, response_json, context);
 
     free_user(creator);
     free_user(second_user);

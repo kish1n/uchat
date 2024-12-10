@@ -1,7 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <libpq-fe.h>
 #include <sqlite3.h>
 #include "../http_response/response.h"
 #include "../httputils/httpcontext.h"
@@ -45,7 +44,6 @@ typedef struct {
 int load_config(const char *filename, Config *config);
 void init_logger(const LoggingConfig *logging_config);
 void logging(LogLevel level, const char *format, ...);
-void log_db_error(PGconn *db_conn, const char *context_message);
 void close_logger();
 
 #endif // CONFIG_H

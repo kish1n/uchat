@@ -85,29 +85,6 @@ void init_logger(const LoggingConfig *logging_config) {
     }
 }
 
-void log_db_error(PGconn *db_conn, const char *context_message) {
-    const char *db_error = PQerrorMessage(db_conn);
-
-    if (strstr(db_error, "duplicate key value violates unique constraint")) {
-        logging(INFO, "%s: Duplicate key detected", context_message);
-    } else if (strstr(db_error, "violates foreign key constraint")) {
-        logging(WARN, "%s: Foreign key constraint violation", context_message);
-    } else if (strstr(db_error, "violates not-null constraint")) {
-        logging(ERROR, "%s: Not-null constraint violated", context_message);
-    } else if (strstr(db_error, "syntax error")) {
-        logging(ERROR, "%s: SQL syntax error", context_message);
-    } else if (strstr(db_error, "permission denied")) {
-        logging(ERROR, "%s: Permission denied for database operation", context_message);
-    } else if (strstr(db_error, "could not connect to server")) {
-        logging(ERROR, "%s: Database connection failed", context_message);
-    } else if (strstr(db_error, "relation does not exist")) {
-        logging(ERROR, "%s: Referenced table or relation does not exist", context_message);
-    } else {
-        logging(ERROR, "%s: Unknown database error", context_message);
-        logging(DEBUG, "Database error detail: %s", db_error);
-    }
-}
-
 void close_logger() {
     if (log_file && log_file != stderr) {
         fclose(log_file);

@@ -1,11 +1,7 @@
 #include <string.h>
-#include <libpq-fe.h>
-#include "../../../pkg/crypto/crypto.h" // Для проверки пароля
 #include "users.h"
-
-#include <string.h>
+#include <stdio.h>
 #include "../../../pkg/crypto/crypto.h" // Для проверки пароля
-#include "users.h"
 
 int check_user_credentials(sqlite3 *db, const char *username, const char *password) {
     const char *query = "SELECT passhash FROM users WHERE username = ?";

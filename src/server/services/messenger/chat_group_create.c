@@ -135,14 +135,9 @@ int handle_create_group_chat(HttpContext *context) {
     }
     free(users);
 
-    logging(INFO, "Group chat created successfully with ID %d", chat_id);
-    return prepare_simple_response("Group chat created", STATUS_CREATED, parsed_json, context);
-
-
-    logging(INFO, "Creating group chat");
-
-    free(creator_username);
+    struct json_object *response_json = json_object_new_object();
+    json_object_object_add(response_json, "chat_id", json_object_new_int(chat_id));
 
     logging(INFO, "Group chat '%s' created successfully with ID %d", name, chat_id);
-    return prepare_simple_response("Success", STATUS_OK, parsed_json, context);
+    return prepare_response(STATUS_OK, response_json, context);
 }

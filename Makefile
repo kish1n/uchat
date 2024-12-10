@@ -23,6 +23,10 @@ LIBS = -lpq -lyaml -lmicrohttpd -ljson-c -lcrypto -ljwt -lsodium -lwebsockets -l
 # Правило для компиляции всех объектов
 all: $(TARGET)
 
+install-libs:
+	sudo apt update && sudo apt install -y libpq-dev libyaml-dev libmicrohttpd-dev libjson-c-dev libssl-dev libjwt-dev libsodium-dev libwebsockets-dev libsqlite3-dev uuid-dev
+
+
 # Компиляция исполняемого файла
 $(TARGET): $(OBJ_FILES)
 	@echo "Linking..."

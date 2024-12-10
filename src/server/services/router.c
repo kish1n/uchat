@@ -5,7 +5,6 @@
 #include "../services/service.h"
 #include "../pkg/httputils/httputils.h"
 #include "../pkg/http_response/response.h"
-#include "../pkg/ws/ws.h"
 #include "../services/messenger/messenger.h"
 #include "../db/core/core.h"
 #include "auth/auth_handlers.h"
@@ -132,12 +131,14 @@ enum MHD_Result router(void *cls,
 
         if (strcmp(sub_url, "/create_private") == 0 && strcmp(method, "POST") == 0) {
             //req:  {"with_user": "username"}
-            //resp: { "status": status_code, "message": "details" }
+            //success-resp: { "status": status_code, "chay_id": "id" }
+            //bad: { "status": status_code, "message": "details" }
             return handle_create_private_chat(&context);
         }
         if (strcmp(sub_url, "/create_group") == 0 && strcmp(method, "POST") == 0) {
             //req:  {"name": "chat_name", "users": ["username1", "username2", ...]}
-            //resp: { "status": status_code, "message": "details" }
+            //success-resp: { "status": status_code, "chay_id": "id" }
+            //bad: { "status": status_code, "message": "details" }
             return handle_create_group_chat(&context);
         }
         if (strcmp(sub_url, "/update_name") == 0 && strcmp(method, "PATCH") == 0) {

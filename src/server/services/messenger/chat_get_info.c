@@ -56,6 +56,7 @@ int handle_get_chat_info(HttpContext *context) {
     }
 
     json_object_object_add(response_json, "chat_name", json_object_new_string(chat_name));
+    json_object_object_add(response_json, "chat_id", json_object_new_int(chat_id));
     json_object_object_add(response_json, "members", members_array);
 
     logging(INFO, "Retrieved information for chat ID: %d", chat_id);
