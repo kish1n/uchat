@@ -13,6 +13,7 @@ admin/log/log.log
 *.o
 main.o
 uchat_server
+uchat
 uchat_server.o
 uchat_server.exe
 uchat.db
