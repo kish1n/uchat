@@ -12,7 +12,9 @@ admin/log/log.log
 # Игнорировать скомпилированные файлы объектных файлов
 *.o
 main.o
-uchat
+uchat_server
+uchat_server.o
+uchat_server.exe
 uchat.db
 uchat.db-shm
 uchat.db-wal
