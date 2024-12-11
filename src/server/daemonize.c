@@ -1,18 +1,23 @@
 #include "server.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
 
 void daemonize(int port) {
     pid_t pid = fork();
 
     if (pid < 0) {
-        perror("Fork failed");
+        perror("First fork failed");
         exit(EXIT_FAILURE);
     }
 
     if (pid > 0) {
-        logging(INFO, "Parent PID: %d, Listening on port: %d", pid, port);
         exit(EXIT_SUCCESS);
     }
 
+    // Мы в потомке первого форка
     if (setsid() < 0) {
         perror("Failed to create new session");
         exit(EXIT_FAILURE);
@@ -22,17 +27,20 @@ void daemonize(int port) {
     signal(SIGHUP, SIG_IGN);
 
     pid = fork();
-
     if (pid < 0) {
-        perror("Fork failed");
+        perror("Second fork failed");
         exit(EXIT_FAILURE);
     }
 
     if (pid > 0) {
-        logging(INFO, "Daemon PID: %d, Listening on port: %d", pid, port);
         exit(EXIT_SUCCESS);
     }
 
+    // Мы в окончательном демоне (потомке второго форка)
+    // Логируем PID итогового демона
+    logging(INFO, "Final daemon PID: %d, Listening on port: %d", getpid(), port);
+
+    // Перенаправляем дескрипторы
     int dev_null = open("/dev/null", O_RDWR);
     if (dev_null < 0) {
         perror("Failed to open /dev/null");
@@ -46,4 +54,6 @@ void daemonize(int port) {
     if (dev_null > STDERR_FILENO) {
         close(dev_null);
     }
+
+    // Далее идёт основная работа демона
 }

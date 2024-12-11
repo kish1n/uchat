@@ -1,11 +1,12 @@
 #include "server.h"
 #include <stdio.h>
-#include <stdlib.h>  // Для Server, server_init, server_start, server_destroy
-#include "db/core/core.h" // Для init_db, create_tables, close_db
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include "db/core/core.h"
 #include "services/service.h"
 
 volatile sig_atomic_t stop_server;
-
 
 void signal_handler(int sig) {
     if (sig == SIGTERM || sig == SIGINT) {
@@ -25,8 +26,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    daemonize();
-
+    daemonize(port);
 
     Config config;
     if (load_config("config.yaml", &config) != 0) {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     }
     logging(INFO, "Database tables created successfully");
 
-    Server *server = server_init(port); // Pass NULL for db_conn since it's SQLite now
+    Server *server = server_init(port);
     if (!server) {
         logging(ERROR, "Failed to initialize server");
         close_db();
