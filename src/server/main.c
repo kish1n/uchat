@@ -3,6 +3,7 @@
 #include <stdlib.h>  // Для Server, server_init, server_start, server_destroy
 #include "db/core/core.h" // Для init_db, create_tables, close_db
 #include "services/service.h"
+#include <sodium.h>
 
 volatile sig_atomic_t stop_server;
 
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    daemonize();
+    //daemonize();
 
 
     Config config;
@@ -59,6 +60,11 @@ int main(int argc, char *argv[]) {
         close_db();
         close_logger();
         return EXIT_FAILURE;
+    }
+
+    if (sodium_init() == -1) {
+        fprintf(stderr, "Failed to initialize libsodium\n");
+        exit(EXIT_FAILURE);
     }
 
     if (server_start(server) != 0) {

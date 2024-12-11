@@ -56,7 +56,7 @@ int handle_get_chat_history(HttpContext *context) {
         return ret;
     }
 
-    char *messages_json = get_chat_messages(context->db_conn, chat_id);
+    char *messages_json = get_chat_messages(context->db_conn, chat_id, &cfg);
     if (!messages_json) {
         logging(ERROR, "Failed to retrieve chat messages for chat ID: %d", chat_id);
         prepare_simple_response("Failed to retrieve chat messages", STATUS_INTERNAL_SERVER_ERROR, NULL, context);

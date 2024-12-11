@@ -32,6 +32,7 @@ typedef struct {
 
 typedef struct {
     char jwt_secret[256];
+    char message_secret[256];
 } SecurityConfig;
 
 typedef struct {

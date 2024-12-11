@@ -90,7 +90,7 @@ int handle_delete_message(HttpContext *context) {
     }
 
     Message message;
-    if (get_message_by_id(context->db_conn, message_id, &message) != 0) {
+    if (get_message_by_id(context->db_conn, message_id, &message, &cfg) != 0) {
         logging(ERROR, "Message not found %d", message_id);
         int ret = prepare_simple_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
 

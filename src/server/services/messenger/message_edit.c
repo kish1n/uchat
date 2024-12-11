@@ -93,7 +93,7 @@ int handle_edit_message(HttpContext *context) {
     }
 
     Message message;
-    if (get_message_by_id(context->db_conn, message_id, &message) != 0) {
+    if (get_message_by_id(context->db_conn, message_id, &message, &cfg) != 0) {
         logging(ERROR, "Message not found");
         int ret = prepare_simple_response("Message not found", STATUS_NOT_FOUND, parsed_json, context);
 
@@ -117,7 +117,7 @@ int handle_edit_message(HttpContext *context) {
         return ret;
     }
 
-    if (edit_message(context->db_conn, message_id, new_content) != 0) {
+    if (edit_message(context->db_conn, message_id, new_content, &cfg) != 0) {
         logging(ERROR, "Failed to edit message");
         int ret = prepare_simple_response("Failed to edit message", STATUS_INTERNAL_SERVER_ERROR, parsed_json, context);
 

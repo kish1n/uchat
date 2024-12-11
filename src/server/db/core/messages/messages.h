@@ -11,11 +11,11 @@ typedef struct {
     char sent_at[64];
 } Message;
 
-int create_message(sqlite3 *db, int chat_id, const char *sender_id, const char *content);
+int create_message(sqlite3 *db, int chat_id, const char *sender_id, const char *content, Config *cfg);
 int delete_message(sqlite3 *db, int message_id);
-int get_message_by_id(sqlite3 *db, int message_id, Message *message);
+int get_message_by_id(sqlite3 *db, int message_id, Message *message, Config *cfg);
 int get_messages_by_chat(sqlite3 *db, int chat_id, Message **messages, int *message_count);
-int edit_message(sqlite3 *db, int message_id, const char *new_content);
+int edit_message(sqlite3 *db, int message_id, const char *new_content, Config *cfg);
 int message_exists(sqlite3 *db, int message_id);
 int get_new_messages_by_chat(sqlite3 *db, int chat_id, int last_message_id, Message **messages, int *message_count);
 int get_last_message_id(sqlite3 *db, int chat_id);

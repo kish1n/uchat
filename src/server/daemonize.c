@@ -9,7 +9,7 @@ void daemonize(int port) {
     }
 
     if (pid > 0) {
-        logging(INFO, "Parent PID: %d, Listening on port: %d", pid, port);
+        logging(INFO, "Parent PID: %d", pid);
         exit(EXIT_SUCCESS);
     }
 
@@ -29,7 +29,7 @@ void daemonize(int port) {
     }
 
     if (pid > 0) {
-        logging(INFO, "Daemon PID: %d, Listening on port: %d", pid, port);
+        logging(INFO, "Daemon PID: %d", pid);
         exit(EXIT_SUCCESS);
     }
 

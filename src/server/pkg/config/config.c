@@ -79,6 +79,10 @@ int load_config(const char *filename, Config *config) {
                         strncpy(config->security.jwt_secret, (char *)token.data.scalar.value, sizeof(config->security.jwt_secret) - 1);
                         config->security.jwt_secret[sizeof(config->security.jwt_secret) - 1] = '\0';
                     }
+                    if (strcmp(current_key, "message_secret") == 0) {
+                        strncpy(config->security.message_secret, (char *)token.data.scalar.value, sizeof(config->security.message_secret) - 1);
+                        config->security.message_secret[sizeof(config->security.message_secret) - 1] = '\0';
+                    }
                 }
             }
         }

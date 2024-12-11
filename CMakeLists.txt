@@ -103,6 +103,7 @@ add_executable(uchat_auth
         src/server/db/core/messages/get_chat_id_by_message_id.c
         src/server/db/core/chats/get_last_message_id_in_chat.c
         src/server/db/core/chats/get_last_message_in_chat.c
+        src/server/db/core/messages/delete_all_messages_in_chat.c
 
 )
 

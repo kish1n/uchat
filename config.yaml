@@ -3,6 +3,6 @@ logging:
   format: "text"
   output_file: "admin/log/log.log"
 
-
 security:
   jwt_secret: "supersecretkey"
+  message_secret: "c2VjdXJlX21lc3NhZ2Vfc2VjcmV0X2tleV9leGFtcGxlMTIz"
