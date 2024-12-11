@@ -1,5 +1,5 @@
 # Имя итогового исполняемого файла
-TARGET = uchat
+TARGET = uchat_server
 
 # Компилятор
 CC = gcc

@@ -1,6 +1,6 @@
 #include "server.h"
 
-void daemonize() {
+void daemonize(int port) {
     pid_t pid = fork();
 
     if (pid < 0) {
@@ -9,7 +9,7 @@ void daemonize() {
     }
 
     if (pid > 0) {
-        // Parent process exits
+        logging(INFO, "Parent PID: %d, Listening on port: %d", pid, port);
         exit(EXIT_SUCCESS);
     }
 
@@ -29,6 +29,7 @@ void daemonize() {
     }
 
     if (pid > 0) {
+        logging(INFO, "Daemon PID: %d, Listening on port: %d", pid, port);
         exit(EXIT_SUCCESS);
     }
 

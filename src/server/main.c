@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    //daemonize();
+    daemonize();
+
 
     Config config;
     if (load_config("config.yaml", &config) != 0) {
